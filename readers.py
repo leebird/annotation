@@ -38,7 +38,8 @@ class AnnReader(Reader):
     def __init__(self,*args):
         super(AnnReader,self).__init__(*args)
         self.annotation = {}
-        
+        #print self.filepath
+
     def parse_entity(self,line):
         fields = line.split('\t')
         info = fields[1].split(' ')            
@@ -49,38 +50,122 @@ class AnnReader(Reader):
         end = int(info[2])
         return Entity(tid,typing,start,end,text)
 
-    def parse_event(self,line):
+    def parse_event(self,line,entities):
         fields = line.split('\t')
         tid = fields[0]
-        info = fields[1].split(' ')        
+        info = fields[1].split(' ')     
         typing = info[0].split(':')
         typeId = typing[1]
         typeText = typing[0]        
         args = []
 
+        if typeText != 'Phosphorylation':
+            return None
+
         for arg in info[1:]:
             argInfo = arg.split(':')
             argType = argInfo[0]
             argId = argInfo[1]
-            args.append((argType,argId))
+            if entities.has_key(argId):
+                entity = entities[argId]
+            else:
+                continue
+            args.append((argType,entity))
 
         return Event(tid,typeText,typeId,args)
 
-        
+    
     def parse(self):
-        f = codecs.open(self.filename,'r','utf-8')
         annotation = {'T':{},'E':{}}
-
+        f = codecs.open(self.filepath,'r','utf-8')
+        
         for line in f:
             line = line.strip()
             if line.startswith('T'):
                 entity = self.parse_entity(line)
                 annotation['T'][entity.id] = entity
-            elif line.startswith('E'):
-                event = self.parse_event(line)
-                annotation['E'][event.id] = event
+                
+        # reset file pointer
+        f.seek(0)
+        
+        for line in f:
+            line = line.strip()
+            if line.startswith('E'):
+                event = self.parse_event(line,annotation['T'])
+                if event is not None:
+                    annotation['E'][event.id] = event
+            #raise Exception('can not parse: '+line)
+            
+        f.close()
+        return annotation
+
+class A1A2Reader(Reader):
+    def __init__(self,a1path,a1file,a2path,a2file):
+        self.a1filepath = os.path.join(a1path,a1file)
+        self.a2filepath = os.path.join(a2path,a2file)
+        #print self.filepath
+
+    def parse_entity(self,line):
+        fields = line.split('\t')
+        info = fields[1].split(' ')            
+        tid = fields[0]
+        text = fields[2]
+        typing = info[0]
+        start = int(info[1])
+        end = int(info[2])
+        return Entity(tid,typing,start,end,text)
+
+    def parse_event(self,line,entities):
+        fields = line.split('\t')
+        tid = fields[0]
+        info = fields[1].split(' ')     
+        typing = info[0].split(':')
+        typeId = typing[1]
+        typeText = typing[0]        
+        args = []
+
+        if typeText != 'Phosphorylation':
+            return None
+
+        for arg in info[1:]:
+            argInfo = arg.split(':')
+            argType = argInfo[0]
+            argId = argInfo[1]
+            if entities.has_key(argId):
+                entity = entities[argId]
             else:
                 continue
+            args.append((argType,entity))
+
+        return Event(tid,typeText,typeId,args)
+
+    
+    def parse(self):
+        annotation = {'T':{},'E':{}}
+        f = codecs.open(self.a1filepath,'r','utf-8')
+        for line in f:
+            line = line.strip()
+            if line.startswith('T'):
+                entity = self.parse_entity(line)
+                annotation['T'][entity.id] = entity
+        f.close()
+
+        f = codecs.open(self.a2filepath,'r','utf-8')
+        for line in f:
+            line = line.strip()
+            if line.startswith('T'):
+                entity = self.parse_entity(line)
+                annotation['T'][entity.id] = entity
+
+        # reset file pointer
+        f.seek(0)
+        
+        for line in f:
+            line = line.strip()
+            if line.startswith('E'):
+                event = self.parse_event(line,annotation['T'])
+                if event is not None:
+                    annotation['E'][event.id] = event
             #raise Exception('can not parse: '+line)
             
         f.close()
@@ -195,7 +280,7 @@ class RlimsReader(Reader):
             if match:
                 tag = match.group(1)
                 text = match.group(2)
-                text = self.remove_bracket(text)
+                text = self.remove_tags(text)
                 res = (tag,text)
         elif self.status == 13:
             tag = None
@@ -206,7 +291,7 @@ class RlimsReader(Reader):
             if match:
                 tag = match.group(1)
                 text = match.group(2)
-                text = self.remove_bracket(text)
+                text = self.remove_tags(text)
             match = self.reAmino.search(line)
             if match:
                 amino = match.group(2)
@@ -214,6 +299,7 @@ class RlimsReader(Reader):
             if match:
                 if text is None:
                     text = match.group(2)
+                    text = self.remove_tags(text)
                 if tag is None:
                     tag = match.group(1)
                     
@@ -226,7 +312,7 @@ class RlimsReader(Reader):
             if match:
                 tag = match.group(1)
                 text = match.group(2)
-                text = self.remove_bracket(text)
+                text = self.remove_tags(text)
                 res = (tag,text)
         return res
 
@@ -241,9 +327,9 @@ class RlimsReader(Reader):
     def index_tag(self,taggedSens):
         tagIndices = {}
         sens = [self.remove_bracket(s) for s in taggedSens]
-        braced = ''.join(sens)
+        braced = ' '.join(sens)
         sens = [self.remove_tags(s) for s in taggedSens]
-        text = ''.join(sens)        
+        text = ' '.join(sens)        
         match = self.reTagged.search(braced)
         while(match):            
             match = self.reTagged.search(braced)
@@ -288,33 +374,37 @@ class RlimsVerboseReader(RlimsReader):
             else:
                 return None
 
-            tokens = med.split('\r')
-            length = len(tokens)
-            if length == 0:
-                return None
+            tokens = med.split('\r\r')
 
-            phrase = self.remove_tags(tokens[0])
-            match = self.reTag.search(tokens[0])
-            if match:
-                tag = match.group(1)
-            else:
-                raise NPPhraseNotFound(tokens[0])
+            for t in tokens:
+                subtokens = t.split('\r')
+                length = len(t)
 
-            res = []
-            if length > 1:
-                for t in tokens[1:]:
-                    subtokens = t.split('|')
-                    position = subtokens[0].split('..')
-                    variances = subtokens[1:]
+                if length == 0:
+                    return None
+
+                phrase = self.remove_tags(subtokens[0])
+                match = self.reTag.search(subtokens[0])
+                if match:
+                    tag = match.group(1)
+                else:
+                    raise NPPhraseNotFound(t)
+
+                res = []
+                for st in subtokens[1:]:
+                    elements = st.split('|')
+                    position = elements[0].split('..')
+                    variances = elements[1:]
                     variances = [self.remove_tags(v) for v in variances]
                     start = int(position[0])
                     end = int(position[1])
                     res.append((tag,phrase,start,end,variances))
-            else:
-                res.append((tag,phrase,-1,-1,[phrase]))
+                if len(res) == 0:
+                    res.append((tag,phrase,-1,-1,[phrase]))
             return res
         else:
             return super(RlimsVerboseReader,self).parse_line(line)
+
         
     def process_line(self,l,res):
         if l.startswith(self.hdMethod):
@@ -337,14 +427,14 @@ class RlimsVerboseReader(RlimsReader):
             tagIdx = v['tag_indices']
             
             sens = [self.remove_tags(s) for s in sens]
-            abstract = ''.join(sens)
+            abstract = ' '.join(sens)
 
             self.entities = {}
             self.events = {}
             self.entityIdx = 1
             self.eventIdx = 1
 
-            for o in output:
+            for o in output:                
                 o = self.fake_method(o,'trigger')
                 o = self.fake_method(o,'kinase')
                 o = self.fake_method(o,'substrate')
@@ -493,6 +583,7 @@ class RlimsVerboseReader(RlimsReader):
             this can fix the site case
             '''
             # argument = a[1]
+
             argument = m[-1][0]
 
             phrase = m[1]
