@@ -10,11 +10,13 @@ Annotation
 
 Reader
 ------
-* Brat annotation tool ann format
-* RLIMS-P text-mining tool normal format 
-* RLIMS-P verbose format
-* RLIMS-P standoff format
+* `AnnReader` - brat annotation tool ann format
+* `A1A2Reader` - bionlp annotation a1, a2 format
+* `RlimsReader` - RLIMS-P text-mining tool normal format 
+* `RlimsVerboseReader` - RLIMS-P verbose format
+* `Rlims2Reader` - RLIMS-P standoff format
 
 Writer
 ------
-* Brat annotation tool ann format
+* `AnnWriter` - brat annotation tool ann format
+* `A1A2Writer` - bionlp annotation a1, a2 format
