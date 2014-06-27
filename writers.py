@@ -37,7 +37,7 @@ class AnnWriter(BionlpWriter):
 
         f.close()
 
-class A1A2Writer:
+class A1A2Writer(BionlpWriter):
     def __init__(self):
         super(A1A2Writer,self).__init__()
 
