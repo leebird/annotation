@@ -18,6 +18,8 @@ class BionlpWriter(object):
             return self.eventFormat.format(e.id,e.type,e.triggerId,args)
         else:
             return None
+    def relation_line(self,r):
+        return self.relFormat.format(r.id,r.type,r.arg1.id,r.arg2.id)
 
 class AnnWriter(BionlpWriter):
     def __init__(self):
@@ -33,6 +35,10 @@ class AnnWriter(BionlpWriter):
 
         for k,e in annotation['E'].iteritems():
             line = self.event_line(e)
+            f.write(line)
+
+        for k,r in annotation['R'].iteritems():
+            line = self.relation_line(r)
             f.write(line)
 
         f.close()
