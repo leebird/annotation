@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 import sys
 import re
 import os
 import codecs
 import itertools
 from pprint import pprint as pp
-from annotation import Entity,Event
+from annotation import Entity,Event,Relation
 
 class ReaderError(Exception):
     def __init__(self,msg):
@@ -21,6 +22,10 @@ class Reader(object):
         self.filepath = os.path.join(path,filename)
         self.reBracket = re.compile(r'<.*?>')
         self.reBrace = re.compile(r'\{.*?\}')
+
+    def warning(self,*objs):
+        print('WARNING:',self.filename,*objs,file=sys.stderr)
+        sys.stderr.flush()
 
     def parse(self):
         raise NotImplementedError('Reader')
@@ -42,13 +47,17 @@ class AnnReader(Reader):
 
     def parse_entity(self,line):
         fields = line.split('\t')
-        info = fields[1].split(' ')            
-        tid = fields[0]
-        text = fields[2]
-        typing = info[0]
-        start = int(info[1])
-        end = int(info[2])
-        return Entity(tid,typing,start,end,text)
+        try:
+            info = fields[1].split(' ')            
+            tid = fields[0]
+            text = fields[2]
+            typing = info[0]
+            start = int(info[1])
+            end = int(info[2])
+        except IndexError:
+            self.warning('cannot parse entity',fields)
+        else:
+            return Entity(tid,typing,start,end,text)
 
     def parse_event(self,line,entities):
         fields = line.split('\t')
@@ -83,7 +92,8 @@ class AnnReader(Reader):
             line = line.strip()
             if line.startswith('T'):
                 entity = self.parse_entity(line)
-                annotation['T'][entity.id] = entity
+                if entity is not None:
+                    annotation['T'][entity.id] = entity
                 
         # reset file pointer
         f.seek(0)
@@ -147,7 +157,8 @@ class A1A2Reader(Reader):
             line = line.strip()
             if line.startswith('T'):
                 entity = self.parse_entity(line)
-                annotation['T'][entity.id] = entity
+                if entity is not None:
+                    annotation['T'][entity.id] = entity
         f.close()
 
         f = codecs.open(self.a2filepath,'r','utf-8')
@@ -155,7 +166,8 @@ class A1A2Reader(Reader):
             line = line.strip()
             if line.startswith('T'):
                 entity = self.parse_entity(line)
-                annotation['T'][entity.id] = entity
+                if entity is not None:
+                    annotation['T'][entity.id] = entity
 
         # reset file pointer
         f.seek(0)
@@ -634,7 +646,7 @@ class RlimsVerboseReader(RlimsReader):
         for m in meds:
 
             # get information from the method line
-            print m
+            print(m)
 
             tag = m[0]
             argument = m[-1][0]
@@ -697,13 +709,16 @@ class Rlims2Reader(Reader):
         self.rePMID = re.compile(r'PMID{/NP_1}.*?{CP_2}([0-9]*?){/CP_2}')
         self.startPoints = None
 
-    def parse(self):        
+    def parse(self):
         res = {}
         f = codecs.open(self.filepath,'r','utf-8')
         for l in f:
             self.parse_line(l,res)
         f.close()
         self.toBionlp(res)
+        self.rehash_entities()
+        self.rehash_events()
+        return {'T':self.entities,'E':self.events,'R':self.relations}
 
     def parse_line(self,l,res):
         if l.startswith('O'):
@@ -725,7 +740,7 @@ class Rlims2Reader(Reader):
                     return
                 else:
                     raise PMIDNotFoundError(l)
-            res[self.pmid]['sentence'].append(sentence)            
+            res[self.pmid]['sentence'].append(sentence)
         else:
             pass
 
@@ -733,8 +748,10 @@ class Rlims2Reader(Reader):
         for pmid,v in res.iteritems():
             self.entityIdx = 1
             self.eventIdx = 1
+            self.relationId = 1
             self.entities = {}
             self.events = {}
+            self.relations = {}
 
             self.sens = [self.remove_tags(s) for s in v['sentence']]
             lens = [len(s) for s in self.sens]
@@ -744,72 +761,102 @@ class Rlims2Reader(Reader):
             for l in lens[:-1]:
                 self.startPoints.append(l+1+self.startPoints[-1])
 
-            annotation = v['output']            
+            annotation = v['output']
             for a in annotation:
                 trigger = self.parse_annotation(a['trigger'])
                 kinases = self.parse_annotation(a['kinase'])
                 substrates = self.parse_annotation(a['substrate'])
                 sites = self.parse_annotation(a['site'])
 
-                trigger = self.get_positions(trigger)
-                kinases = self.get_positions(kinases)
-                substrates = self.get_positions(substrates)
-                sites = self.get_positions(sites)
-
+                trigger = trigger[0]
                 self.add_entities(trigger,'Phosphorylation')
-                self.add_entities(kinases,'Agent')
-                self.add_entities(substrates,'Theme')
-                self.add_entities(sites,'Entity')
-                      
-                if len(sites) == 0:
-                    combine = [(tri,sub) for tri in trigger 
-                               for sub in substrates]
-                else:
-                    combine = [(tri,sub,site) for tri in trigger 
-                               for sub in substrates 
-                               for site in sites]
 
+                proteins = [a[0:1] if len(a) == 1 else a[1:] for a in kinases]
+                proteins = [p for pp in proteins for p in pp]
+                self.add_entities(proteins,'Protein')
+
+                anaphora = [a[0:1] for a in kinases if len(a) > 1]
+                anaphora = [p for pp in anaphora for p in pp]
+                self.add_entities(anaphora,'Anaphora')
+
+                proteins = [a[0:1] if len(a) == 1 else a[1:] for a in substrates]
+                proteins = [p for pp in proteins for p in pp]
+                self.add_entities(proteins,'Protein')
+
+                anaphora = [a[0:1] for a in substrates if len(a) > 1]
+                anaphora = [p for pp in anaphora for p in pp]
+                self.add_entities(anaphora,'Anaphora')
+
+                phosSite = [a[0:1] if len(a) == 1 else a[1:] for a in sites]
+                phosSite = [p for pp in phosSite for p in pp]
+                self.add_entities(phosSite,'Site')
+
+                anaphora = [a[0:1] for a in sites if len(a) > 1]
+                anaphora = [p for pp in anaphora for p in pp]
+                self.add_entities(anaphora,'Anaphora')
+
+                argKinases = [a[0] for a in kinases]
+                argSubstrates = [a[0] for a in substrates]
+                argSites = [a[0] for a in sites]
+
+                combine = [(tri,sub,kinase,site) for tri in trigger
+                           for sub in argSubstrates
+                           for kinase in argKinases
+                           for site in argSites]
+
+                if len(combine) == 0:
+                    combine = [(tri,sub,kinase,None) for tri in trigger
+                               for sub in argSubstrates
+                               for kinase in argKinases]
+
+                if len(combine) == 0:
+                    combine = [(tri,sub,None,site) for tri in trigger
+                               for sub in argSubstrates
+                               for site in argSites]
+
+                if len(combine) == 0:
+                    combine = [(tri,sub,None,None) for tri in trigger
+                               for sub in argSubstrates]
                 if len(combine) == 0:
                     continue
 
                 self.add_events(combine,'Phosphorylation')
-                self._toBionlp()
-
-    def _toBionlp(self):
-        entityFormat = '{}\t{} {} {}\t{}'
-        eventOneArg = '{}\t{}:{} {}:{}'
-        eventTwoArgs = '{}\t{}:{} {}:{} {}:{}'
-        '''
-        entitiesFormated = [entityFormat.format(t) for t in self.entities.values()]
-        eventsFormated = [eventOneArg.format(e) for e in self.events.values() 
-                          if len(e) == 2]
-        eventsFormated += [eventTwoArg.format(e) for e in self.events.values() 
-                           if len(e) == 3]
-
-        merged = entitiesFormated + eventsFormated
-        res = '\n'.join(merged)
-        print res
-        '''
+                self.add_relations(kinases,'Coreference')
+                self.add_relations(substrates,'Coreference')
+                self.add_relations(sites,'Coreference')
+                #self._toBionlp()
 
     def parse_annotation(self,annotation):
         annotation = annotation.strip()
+
         if len(annotation) == 0:
             return ()
+
+        res = []
         args = annotation.split('|')
-        args = [arg.split(' ') for arg in args]
-        args = [(int(a[0]),int(a[1]),int(a[2])) for a in args]
-        return args
+
+        for arg in args:
+            subargs = arg.split(':')
+            subargs = [subarg.split(' ') for subarg in subargs]
+            subargs = [map(int,a) for a in subargs]
+            subargs = self.get_positions(subargs)
+            subargs = [tuple(a) for a in subargs]
+            res.append(subargs)
+
+        return res
 
     def add_entities(self,entities,entityRole):
         for t in entities:
             self.add_entity(t,entityRole)
-                
+
     def add_entity(self,entity,entityRole):
         if not self.entities.has_key(entity):
             tIdx = 'T'+str(self.entityIdx)
             self.entityIdx += 1
             text = self.abstract[entity[0]:entity[1]]
-            self.entities[entity] = (tIdx,entityRole)+entity+(text,)
+            start = entity[0]
+            end = entity[1]
+            self.entities[entity] = Entity(tIdx,entityRole,start,end,text)
 
     def add_events(self,events,eventType):
         for e in events:
@@ -819,30 +866,86 @@ class Rlims2Reader(Reader):
         if not self.events.has_key(event):
             eIdx = 'E'+str(self.eventIdx)
             self.eventIdx += 1
-            self.events[event] = (eIdx,eventType)+event
+            entities = []
+            trigger = self.entities[event[0]]
+            theme = self.entities[event[1]]
+            args = [('Theme',theme)]
+            if event[2] is not None:
+                kinase = self.entities[event[2]]
+                args.append(('Cause',kinase))
+            if event[3] is not None:
+                try:
+                    site = self.entities[event[3]]
+                    args.append(('Site',site))
+                except:
+                    print self.filename
+                    print self.abstract[event[3][0]:event[3][1]]
+                    pp(self.entities)
+                    print event
+
+
+            self.events[event] = Event(eIdx,eventType,trigger.id,args)
+
+    def add_relations(self,relations,relationType):
+        for r in relations:
+            if len(r) > 1:
+                for p in r[1:]:
+                    self.add_relation((r[0],p),relationType)
+
+
+    def add_relation(self,relation,relationType):
+        if not self.relations.has_key(relation):
+            rid = 'R'+str(self.relationId)
+            self.relationId += 1
+            arg1 = self.entities[relation[0]]
+            arg2 = self.entities[relation[1]]
+
+            self.relations[relation] = Relation(rid,relationType,arg1,arg2)
 
     def get_positions(self,oldIndices):
+        #print oldIndices
         return [self.get_position(i) for i in oldIndices]
-        
+
     def get_position(self,oldIndex):
         base = self.startPoints[oldIndex[0]-1]
         sen = self.sens[oldIndex[0]-1]
         start = oldIndex[1]
         length = oldIndex[2]
 
+
         for i,c in enumerate(list(sen)):
-            if i < start:
-                if c == ' ':
-                    start += 1
-                continue
-            
-            if c == ' ':
-                length += 1
 
             if i-start >= length:
                 break
 
+            if i <= start:
+                if c == ' ':
+                    start += 1
+                continue
+
+            if i > start and c == ' ':
+                length += 1
+
         start = base + start
         end = start+length
         return (start,end)
-        
+
+    def rehash_entities(self):
+        '''
+        change key from position tuple to entity index, e.g., T1
+        '''
+        entities = {}
+        for t in self.entities.values():
+            entities[t.id] = t
+        del self.entities
+        self.entities = entities
+
+    def rehash_events(self):
+        '''
+        change key from tuple to event index, e.g., E1
+        '''
+        events = {}
+        for e in self.events.values():
+            events[e.id] = e
+        del self.events
+        self.events = events
