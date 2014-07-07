@@ -43,7 +43,6 @@ class AnnReader(Reader):
     def __init__(self,*args):
         super(AnnReader,self).__init__(*args)
         self.annotation = {}
-        #print self.filepath
 
     def parse_entity(self,line):
         fields = line.split('\t')
@@ -68,9 +67,6 @@ class AnnReader(Reader):
         typeText = typing[0]        
         args = []
 
-        if typeText != 'Phosphorylation':
-            return None
-
         for arg in info[1:]:
             argInfo = arg.split(':')
             argType = argInfo[0]
@@ -83,9 +79,27 @@ class AnnReader(Reader):
 
         return Event(tid,typeText,typeId,args)
 
-    
+    def parse_relation(self,line,entities):
+        fields = line.split('\t')
+        rid = fields[0]
+        info = fields[1].split(' ')     
+        typeText = info[0]
+        args = []
+
+        for arg in info[1:]:
+            argInfo = arg.split(':')
+            argType = argInfo[0]
+            argId = argInfo[1]
+            if entities.has_key(argId):
+                entity = entities[argId]
+            else:
+                continue
+            args.append((argType,entity))
+
+        return Relation(rid,typeText,args[0],args[1])
+
     def parse(self):
-        annotation = {'T':{},'E':{}}
+        annotation = {'T':{},'E':{},'R':{}}
         f = codecs.open(self.filepath,'r','utf-8')
         
         for line in f:
@@ -104,6 +118,10 @@ class AnnReader(Reader):
                 event = self.parse_event(line,annotation['T'])
                 if event is not None:
                     annotation['E'][event.id] = event
+            elif line.startswith('R'):
+                relation = self.parse_relation(line,annotation['T'])
+                if relation is not None:
+                    annotation['R'][relation.id] = relation
             #raise Exception('can not parse: '+line)
             
         f.close()
@@ -878,10 +896,10 @@ class Rlims2Reader(Reader):
                     site = self.entities[event[3]]
                     args.append(('Site',site))
                 except:
-                    print self.filename
-                    print self.abstract[event[3][0]:event[3][1]]
+                    print(self.filename)
+                    print(self.abstract[event[3][0]:event[3][1]])
                     pp(self.entities)
-                    print event
+                    print(event)
 
 
             self.events[event] = Event(eIdx,eventType,trigger.id,args)
