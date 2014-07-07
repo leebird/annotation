@@ -6,14 +6,8 @@ import os
 import codecs
 import itertools
 from pprint import pprint as pp
+from glob import glob
 from annotation import Entity,Event,Relation
-
-class ReaderError(Exception):
-    def __init__(self,msg):
-        self.msg = msg
-    
-    def __str__(self):
-        return repr(self.msg)
 
 class Reader(object):
     def __init__(self,path,filename):
@@ -38,6 +32,41 @@ class Reader(object):
 
     def remove_tags(self,text):
         return self.remove_bracket(self.remove_brace(text))
+
+class CorpusReader(Reader):
+    def __init__(self,path,formatType):
+        self.path = path
+        self.formatType = formatType
+
+    def read_annotation(self,filename):
+        if self.formatType == 'ann':
+            annoFile = filename + '.ann'
+            reader = AnnReader(self.path,annoFile)
+        elif self.formatType == 'a1a2':
+            a1File = filename + '.a1'
+            a2File = filename + '.a2'
+            reader = A1A2Reader(self.path,a1File,a2File)
+        else:
+            pass
+
+        return reader.parse()
+
+    def read(self):
+        res = {}
+        for root,_,files in os.walk(self.path):
+            for f in files:
+                if not f.endswith('.txt'):
+                    continue
+
+                filename = f[:-4]
+                txtFile = codecs.open(os.path.join(root,f),'r','utf-8')
+                text = txtFile.read()
+                txtFile.close()
+                
+                annotation = self.read_annotation(filename)
+                res[filename] = {'text':text,'annotation':annotation}
+
+        return res                                        
 
 class AnnReader(Reader):
     def __init__(self,*args):
