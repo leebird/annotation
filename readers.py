@@ -269,6 +269,11 @@ class SGMLReader(Reader):
             tagFull = tag.group(0)
             if self.is_close(tagFull):
                 startTag = openTagStack.pop()
+                startTagText = startTag.group(1)
+                '''
+                open-tag and close-tag should have the same tag name
+                '''
+                assert(startTagText == tagText)
                 start = startTag.end()
                 end = tag.start()
                 entityText,start,end = self.get_entity_by_index(snippets,start,end)      
