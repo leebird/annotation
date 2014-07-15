@@ -16,6 +16,8 @@ class Reader(object):
         self.filepath = os.path.join(path,filename)
         self.reBracket = re.compile(r'<.*?>')
         self.reBrace = re.compile(r'\{.*?\}')
+        self.pOpenBracket = re.compile(r'<([^/]*?)>')
+        self.pCloseBracket = re.compile(r'</(.*?)>')
 
     def warning(self,*objs):
         print('WARNING:',self.filename,*objs,file=sys.stderr)
@@ -32,6 +34,21 @@ class Reader(object):
 
     def remove_tags(self,text):
         return self.remove_bracket(self.remove_brace(text))
+
+    def read_file(self,filepath):
+        f = codecs.open(filepath,'r','utf-8')
+        text = f.read()
+        f.close()
+        return text
+
+    def open_file(self, filepath):
+        f = codecs.open(filepath,'r','utf-8')
+        return f
+
+    def write_file(self, filepath, content, flag='w'):
+        f = codecs.open(filepath,flag,'utf-8')
+        f.write(content)
+        f.close()
 
 class CorpusReader(Reader):
     def __init__(self,path,formatType):
@@ -155,6 +172,123 @@ class AnnReader(Reader):
             
         f.close()
         return annotation
+
+class SGMLReader(Reader):
+    def __init__(self,*args):
+        super(SGMLReader,self).__init__(*args)
+        self.annotation = {'T':{},'E':{},'R':{},'text':''}
+        self.tid = 1
+        self.entities = {}
+        self.entityMapping = False
+        self.cursor = 0
+
+    def set_tag_entity_mapping(self,mapping):
+        '''
+        set mapping from tag name to entity type
+        if <pro> means Protein, then a mapping from
+        'pro' to 'Protein' should be set to have 
+        the entity typed 'Protein' in the output
+        '''
+        self.mapping = mapping
+        self.entityMapping = True
+
+    def get_open_bracket(self,text):
+        return self.pOpenBracket.finditer(text)
+
+    def get_close_bracket(self,text):
+        return self.pCloseBracket.finditer(text)
+
+    def is_close(self,tag):
+        return tag.startswith('</')
+
+    def get_text_snippet(self,text,tags):
+        '''
+        get text snippets between each two tags
+        entity text will be between an open-tag and a close-tag
+        others are normal text
+        '''
+        snippets = {}
+        length = len(text)
+        start = 0        
+        for tag in tags:
+            end = tag.start()
+            snippets[(start,end)] = text[start:end]
+            start = tag.end()
+        snippets[(start,length)] = text[start:length]
+        return snippets
+
+    def get_entity_by_index(self, snippets, start, end):
+        '''
+        get entity by its tags' positions
+        '''
+        entityText, entityStart, entityEnd = '', -1, -1
+        missingEnd = False
+        currentPos = 0
+
+        '''
+        sort indices from text start to text end
+        '''
+        indices = sorted(snippets.keys(),key=lambda a:a[0])
+
+        for pos in indices:
+            text = snippets[pos]
+            if pos[0] == start and pos[1] == end:                
+                entityText += text
+                entityStart = currentPos
+                entityEnd = currentPos + len(text)
+                break
+            elif pos[0] == start:
+                entityText += text
+                entityStart = currentPos
+                missingEnd = True
+            elif pos[1] == end:
+                entityText += text
+                entityEnd = currentPos + len(text)
+                break
+            elif missingEnd:
+                entityText += text        
+
+            currentPos += len(text)
+
+        return (entityText,entityStart,entityEnd)
+
+    def parse(self):
+        text = self.read_file(self.filepath)
+        openTags = self.get_open_bracket(text)
+        closeTags = self.get_close_bracket(text)
+        tags = list(openTags) + list(closeTags)
+        orderedTags = sorted(tags,key=lambda a:a.start())
+
+        snippets = self.get_text_snippet(text,orderedTags)
+
+        openTagStack = []
+        closeTagStack = []
+
+        for tag in orderedTags:
+            tagText = tag.group(1)
+            tagFull = tag.group(0)
+            if self.is_close(tagFull):
+                startTag = openTagStack.pop()
+                start = startTag.end()
+                end = tag.start()
+                entityText,start,end = self.get_entity_by_index(snippets,start,end)      
+                if self.entityMapping:
+                    category = self.mapping[tagText]
+                else:
+                    category = tagText
+                self.add_entity(entityText,category,start,end)
+            else:
+                openTagStack.append(tag)
+
+        self.annotation['T'] = self.entities
+        self.annotation['text'] = self.remove_tags(text)
+        return self.annotation
+
+    def add_entity(self,text,category,start,end):
+        tid = 'T' + str(self.tid)
+        self.tid += 1
+        entity = Entity(tid,category,start,end,text)
+        self.entities[tid] = entity
 
 class A1A2Reader(Reader):
     def __init__(self,a1path,a1file,a2path,a2file):
