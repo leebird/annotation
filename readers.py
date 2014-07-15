@@ -272,8 +272,12 @@ class SGMLReader(Reader):
                 startTagText = startTag.group(1)
                 '''
                 open-tag and close-tag should have the same tag name
+                if not skip this pair and continue
+                if this happens, at least two entities are skip
                 '''
-                assert(startTagText == tagText)
+                if startTagText != tagText:
+                    self.warning('different open-tag and close-tag')
+                    continue
                 start = startTag.end()
                 end = tag.start()
                 entityText,start,end = self.get_entity_by_index(snippets,start,end)      
