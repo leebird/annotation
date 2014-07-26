@@ -78,12 +78,12 @@ summary
 1. All string/bytes are equal in python 2.
 2. Using literal u requires the file encoding to be claimed at
    the beginning of the file.
-2. When I/O unicode contents, encoding must be specify, 
+3. When I/O unicode contents, encoding must be specify, 
    or default encoding of the I/O will be used. If there 
    is no default encoding, ascii will be used.
-3. When calling member methods of unicode, unicode arguments 
+4. When calling member methods of unicode, unicode arguments 
    should be used otherwise it may cause UnicodeDecodeError 
    when decoding the arguments by ascii. 
-4. Other methods won't convert its argument automatically. It
+5. Other methods won't convert its argument automatically. It
    just uses them as is and may potentially cause error.
 '''
