@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import print_function
 import sys
 import re
@@ -7,24 +8,17 @@ import codecs
 import itertools
 from pprint import pprint as pp
 from glob import glob
-from annotation import Entity,Event,Relation
+from annotation import *
 
-class Reader(object):
-    def __init__(self,path,filename):
-        self.path = path
-        self.filename = filename
-        self.filepath = os.path.join(path,filename)
-        self.reBracket = re.compile(r'<.*?>')
-        self.reBrace = re.compile(r'\{.*?\}')
-        self.pOpenBracket = re.compile(r'<([^/]*?)>')
-        self.pCloseBracket = re.compile(r'</(.*?)>')
+class TextProcessor(object):
+    def __init__(self):
+        self.compile_common_pattern()
 
-    def warning(self,*objs):
-        print('WARNING:',self.filename,*objs,file=sys.stderr)
-        sys.stderr.flush()
-
-    def parse(self):
-        raise NotImplementedError('Reader')
+    def compile_common_pattern(self):
+        self.reBracket = re.compile(ur'<.*?>')
+        self.reBrace = re.compile(ur'\{.*?\}')
+        self.pOpenBracket = re.compile(ur'<([^/]*?)>')
+        self.pCloseBracket = re.compile(ur'</(.*?)>')            
 
     def remove_bracket(self,text):
         return re.sub(self.reBracket,'',text)
@@ -35,20 +29,52 @@ class Reader(object):
     def remove_tags(self,text):
         return self.remove_bracket(self.remove_brace(text))
 
+class Reader(object):
+    def __init__(self,path,filename):
+        self.path = path
+        self.filename = filename
+        self.filepath = os.path.join(path,filename)
+        self.annotation = Annotation()
+        self.compile_common_pattern()
+
+    def warning(self,*objs):
+        print('WARNING:',self.filename,*objs,file=sys.stderr)
+        sys.stderr.flush()
+
+    def read(self):
+        raise NotImplementedError('Reader')
+
     def read_file(self,filepath):
-        f = codecs.open(filepath,'r','utf-8')
-        text = f.read()
-        f.close()
-        return text
+        if os.path.isfile(filepath):
+            f = codecs.open(filepath,'r','utf-8')
+            text = f.read()
+            f.close()
+            return text
 
     def open_file(self, filepath):
-        f = codecs.open(filepath,'r','utf-8')
-        return f
+        if os.path.isfile(filepath):
+            f = codecs.open(filepath,'r','utf-8')
+            return f
 
     def write_file(self, filepath, content, flag='w'):
         f = codecs.open(filepath,flag,'utf-8')
         f.write(content)
         f.close()
+
+    def compile_common_pattern(self):
+        self.reBracket = re.compile(ur'<.*?>')
+        self.reBrace = re.compile(ur'\{.*?\}')
+        self.pOpenBracket = re.compile(ur'<([^/]*?)>')
+        self.pCloseBracket = re.compile(ur'</(.*?)>')            
+
+    def remove_bracket(self,text):
+        return re.sub(self.reBracket,'',text)
+
+    def remove_brace(self,text):
+        return re.sub(self.reBrace,'',text)
+
+    def remove_tags(self,text):
+        return self.remove_bracket(self.remove_brace(text))
 
 class CorpusReader(Reader):
     def __init__(self,path,formatType):
@@ -62,33 +88,35 @@ class CorpusReader(Reader):
         elif self.formatType == 'a1a2':
             a1File = filename + '.a1'
             a2File = filename + '.a2'
-            reader = A1A2Reader(self.path,a1File,a2File)
+            reader = A1A2Reader(self.path,a1File,path,a2File)
         else:
             pass
 
-        return reader.parse()
+        return reader.read()
 
     def read(self):
         res = {}
-        for root,_,files in os.walk(self.path):
-            for f in files:
-                if not f.endswith('.txt'):
-                    continue
-
-                filename = f[:-4]
-                txtFile = codecs.open(os.path.join(root,f),'r','utf-8')
-                text = txtFile.read()
-                txtFile.close()
+        for f in os.listdir(self.path):
+            if not f.endswith('.txt'):
+                continue
+            
+            if not os.path.isfile(os.path.join(self.path,f)):
+                continue
+            
+            txtFile = self.open_file(os.path.join(self.path,f))
+            text = txtFile.read()
+            txtFile.close()
+            
+            fid = f[:-4]
                 
-                annotation = self.read_annotation(filename)
-                res[filename] = {'text':text,'annotation':annotation}
+            annotation = self.read_annotation(fid)
+            res[fid] = {'text':text,'annotation':annotation}
 
         return res                                        
 
 class AnnReader(Reader):
     def __init__(self,*args):
         super(AnnReader,self).__init__(*args)
-        self.annotation = {}
 
     def parse_entity(self,line):
         fields = line.split('\t')
@@ -99,79 +127,56 @@ class AnnReader(Reader):
             typing = info[0]
             start = int(info[1])
             end = int(info[2])
+            self.annotation.add_exist_entity(tid,typing,start,end,text)
         except IndexError:
             self.warning('cannot parse entity',fields)
-        else:
-            return Entity(tid,typing,start,end,text)
 
-    def parse_event(self,line,entities):
+    def parse_event(self,line):
         fields = line.split('\t')
         tid = fields[0]
         info = fields[1].split(' ')     
         typing = info[0].split(':')
         typeId = typing[1]
         typeText = typing[0]        
-        args = []
 
-        for arg in info[1:]:
-            argInfo = arg.split(':')
-            argType = argInfo[0]
-            argId = argInfo[1]
-            if entities.has_key(argId):
-                entity = entities[argId]
-            else:
-                continue
-            args.append((argType,entity))
+        args = [arg.split(':') for arg in info[1:]]
 
-        return Event(tid,typeText,typeId,args)
+        self.annotation.add_exist_event(tid,typeText,typeId,args)
 
-    def parse_relation(self,line,entities):
+    def parse_relation(self,line):
         fields = line.split('\t')
         rid = fields[0]
         info = fields[1].split(' ')     
         typeText = info[0]
-        args = []
 
-        for arg in info[1:]:
-            argInfo = arg.split(':')
-            argType = argInfo[0]
-            argId = argInfo[1]
-            if entities.has_key(argId):
-                entity = entities[argId]
-            else:
-                continue
-            args.append((argType,entity))
+        args = [arg.split(':') for arg in info[1:]]
 
-        return Relation(rid,typeText,args[0],args[1])
+        self.annotation.add_exist_relation(rid,typeText,args[0],args[1])
 
-    def parse(self):
-        annotation = {'T':{},'E':{},'R':{}}
-        f = codecs.open(self.filepath,'r','utf-8')
-        
+    def read(self):
+        f = self.open_file(self.filepath)
+
+        if f is None:
+            return
+
         for line in f:
             line = line.strip()
-            if line.startswith('T'):
-                entity = self.parse_entity(line)
-                if entity is not None:
-                    annotation['T'][entity.id] = entity
-                
-        # reset file pointer
+            if line.startswith(Entity.linestart):
+                self.parse_entity(line)
+        '''        
+        reset file pointer
+        '''
         f.seek(0)
         
         for line in f:
             line = line.strip()
-            if line.startswith('E'):
-                event = self.parse_event(line,annotation['T'])
-                if event is not None:
-                    annotation['E'][event.id] = event
-            elif line.startswith('R'):
-                relation = self.parse_relation(line,annotation['T'])
-                if relation is not None:
-                    annotation['R'][relation.id] = relation
+            if line.startswith(Event.linestart):
+                self.parse_event(line)
+            elif line.startswith(Relation.linestart):
+                self.parse_relation(line)
             #raise Exception('can not parse: '+line)
-            
-        f.close()
-        return annotation
+
+        return self.annotation
 
 class SGMLReader(Reader):
     def __init__(self,*args):
@@ -252,7 +257,7 @@ class SGMLReader(Reader):
 
         return (entityText,entityStart,entityEnd)
 
-    def parse(self):
+    def read(self):
         text = self.read_file(self.filepath)
         openTags = self.get_open_bracket(text)
         closeTags = self.get_close_bracket(text)
@@ -285,19 +290,12 @@ class SGMLReader(Reader):
                     category = self.mapping[tagText]
                 else:
                     category = tagText
-                self.add_entity(entityText,category,start,end)
+                self.annotation.add_entity(category,start,end,entityText)
             else:
                 openTagStack.append(tag)
 
-        self.annotation['T'] = self.entities
-        self.annotation['text'] = self.remove_tags(text)
-        return self.annotation
-
-    def add_entity(self,text,category,start,end):
-        tid = 'T' + str(self.tid)
-        self.tid += 1
-        entity = Entity(tid,category,start,end,text)
-        self.entities[tid] = entity
+        textpured = self.remove_tags(text)
+        return textpured,self.annotation
 
 class A1A2Reader(Reader):
     def __init__(self,a1path,a1file,a2path,a2file):
@@ -313,61 +311,53 @@ class A1A2Reader(Reader):
         typing = info[0]
         start = int(info[1])
         end = int(info[2])
-        return Entity(tid,typing,start,end,text)
+        self.annotation.add_exist_entity(tid,typing,start,end,text)
 
-    def parse_event(self,line,entities):
+    def parse_event(self,line):
         fields = line.split('\t')
         tid = fields[0]
         info = fields[1].split(' ')     
         typing = info[0].split(':')
         typeId = typing[1]
         typeText = typing[0]        
-        args = []
 
-        if typeText != 'Phosphorylation':
-            return None
+        args = [arg.split(':') for arg in info[1:]]
 
-        for arg in info[1:]:
-            argInfo = arg.split(':')
-            argType = argInfo[0]
-            argId = argInfo[1]
-            if entities.has_key(argId):
-                entity = entities[argId]
-            else:
-                continue
-            args.append((argType,entity))
+        self.annotation.add_exist_event(tid,typeText,typeId,args)
 
-        return Event(tid,typeText,typeId,args)
+    def parse_relation(self):
+        fields = line.split('\t')
+        rid = fields[0]
+        info = fields[1].split(' ')     
+        typeText = info[0]
 
+        args = [arg.split(':') for arg in info[1:]]
+
+        self.annotation.add_exist_relation(rid,typeText,args[0],args[1])
     
-    def parse(self):
-        annotation = {'T':{},'E':{}}
-        f = codecs.open(self.a1filepath,'r','utf-8')
+    def read(self):
+        f = self.open_file(self.a1filepath)
         for line in f:
             line = line.strip()
-            if line.startswith('T'):
-                entity = self.parse_entity(line)
-                if entity is not None:
-                    annotation['T'][entity.id] = entity
+            if line.startswith(Entity.linestart):
+                self.parse_entity(line)
         f.close()
 
-        f = codecs.open(self.a2filepath,'r','utf-8')
+        f = self.open_file(self.a2filepath)
         for line in f:
             line = line.strip()
-            if line.startswith('T'):
+            if line.startswith(Entity.linestart):
                 entity = self.parse_entity(line)
-                if entity is not None:
-                    annotation['T'][entity.id] = entity
 
         # reset file pointer
         f.seek(0)
         
         for line in f:
             line = line.strip()
-            if line.startswith('E'):
-                event = self.parse_event(line,annotation['T'])
-                if event is not None:
-                    annotation['E'][event.id] = event
+            if line.startswith(Event.linestart):
+                self.parse_event(line)
+            elif line.startswith(Relation.linestart):
+                self.parse_relation(line)
             #raise Exception('can not parse: '+line)
             
         f.close()
@@ -518,8 +508,8 @@ class RlimsReader(Reader):
                 res = (tag,text)
         return res
 
-    def parse(self):
-        f = codecs.open(self.filepath,'r','utf-8')
+    def read(self):
+        f = self.open_file(self.filepath)
         text = f.read()
         f.close()
         blocks = self.split(text)
@@ -554,6 +544,7 @@ class RlimsVerboseReader(RlimsReader):
         self.reMethod = re.compile(r'\[(.*?)\]')
         self.isMethod = False
         self.reTag = re.compile(r'\{/(.*?)\}')
+        self.annotation = Annotation()
 
     def init_output(self):
         output = {'trigger':[],
@@ -622,7 +613,7 @@ class RlimsVerboseReader(RlimsReader):
             super(RlimsVerboseReader,self).process_line(l,res)            
 
     def toBionlp(self,res):
-        ann = {}
+
         for pmid,v in res.iteritems():
             output = v['output']
             sens = v['sentence']
@@ -670,11 +661,11 @@ class RlimsVerboseReader(RlimsReader):
                 args = {'Theme':proteins,'Site':sites}
                 self.add_events(triggers[0],args,'Phosphorylation')
             
-            self.rehash_entities()
-            self.rehash_events()
-            ann[pmid] = {'T':self.entities,'E':self.events,'text':abstract}
+            #self.rehash_entities()
+            #self.rehash_events()
+            #ann[pmid] = {'T':self.entities,'E':self.events,'text':abstract}
             
-        return ann
+        return text,self.annotation
 
     def fake_method(self,output,needle):
         '''
@@ -696,6 +687,10 @@ class RlimsVerboseReader(RlimsReader):
                 arg = (('Theme',t),('Site',s))
                 done = True
 
+                if not self.annotation.has_event_prop(eventType,trigger,arg):
+                    self.annotation.add_event(eventType,trigger,arg)
+                    
+                '''
                 if self.events.has_key((trigger.id,arg)):
                     continue
 
@@ -704,12 +699,16 @@ class RlimsVerboseReader(RlimsReader):
                 
                 event = Event(eid,eventType,trigger.id,arg)
                 self.events[(trigger.id,arg)] = event
-
+                '''
 
         if not done:
             for t in args['Theme']:
                 arg = (('Theme',t),)
 
+                if not self.annotation.has_event_prop(eventType,trigger,arg):
+                    self.annotation.add_event(eventType,trigger,arg)
+
+                '''
                 if self.events.has_key((trigger.id,arg)):
                     continue
 
@@ -717,6 +716,7 @@ class RlimsVerboseReader(RlimsReader):
                 self.eventIdx += 1
                 event = Event(eid,eventType,trigger.id,arg)
                 self.events[(trigger.id,arg)] = event
+                '''
                 done = True
 
     def rehash_entities(self):
@@ -750,13 +750,18 @@ class RlimsVerboseReader(RlimsReader):
             start = i[0]
             end = i[1]
             text = i[2]
+            if not self.annotation.has_entity_prop(entityType,start,end,text):
+                entity = self.annotation.add_entity(entityType,start,end,text)
+                self.append(entity)
+            '''
             if not self.entities.has_key((start,end)):
                 tid = 'T' + str(self.entityIdx)
                 self.entityIdx += 1
                 entity = Entity(tid,entityType,start,end,text)
                 self.entities[(start,end)] = entity
             res.append(self.entities[(start,end)])
-
+            '''
+            
         return res
             
     
@@ -899,9 +904,9 @@ class Rlims2Reader(Reader):
         self.rePMID = re.compile(r'PMID{/NP_1}.*?{CP_2}([0-9]*?){/CP_2}')
         self.startPoints = None
 
-    def parse(self):
+    def read(self):
         res = {}
-        f = codecs.open(self.filepath,'r','utf-8')
+        f = self.open_file(self.filepath)
         for l in f:
             self.parse_line(l,res)
         f.close()
