@@ -30,10 +30,12 @@ class TextProcessor(object):
         return self.remove_bracket(self.remove_brace(text))
 
 class Reader(object):
-    def __init__(self,path,filename):
+    def __init__(self):
+        '''
         self.path = path
         self.filename = filename
         self.filepath = os.path.join(path,filename)
+        '''
         self.annotation = Annotation()
         self.compile_common_pattern()
 
@@ -41,6 +43,16 @@ class Reader(object):
         print('WARNING:',self.filename,*objs,file=sys.stderr)
         sys.stderr.flush()
 
+    def parse(self,text):
+        raise NotImplementedError('Reader')
+
+    def parse_file(self,path,filename):
+        text = self.read_file()
+        return self.parse(text)
+
+    def parse_folder(self,path):
+        pass
+        
     def read(self):
         raise NotImplementedError('Reader')
 
@@ -153,7 +165,7 @@ class AnnReader(Reader):
 
         self.annotation.add_exist_relation(rid,typeText,args[0],args[1])
 
-    def read(self):
+    def parse(self):
         f = self.open_file(self.filepath)
 
         if f is None:
@@ -257,7 +269,7 @@ class SGMLReader(Reader):
 
         return (entityText,entityStart,entityEnd)
 
-    def read(self):
+    def parse(self):
         text = self.read_file(self.filepath)
         openTags = self.get_open_bracket(text)
         closeTags = self.get_close_bracket(text)
@@ -335,7 +347,7 @@ class A1A2Reader(Reader):
 
         self.annotation.add_exist_relation(rid,typeText,args[0],args[1])
     
-    def read(self):
+    def parse(self):
         f = self.open_file(self.a1filepath)
         for line in f:
             line = line.strip()
@@ -508,7 +520,7 @@ class RlimsReader(Reader):
                 res = (tag,text)
         return res
 
-    def read(self):
+    def parse(self):
         f = self.open_file(self.filepath)
         text = f.read()
         f.close()
@@ -904,7 +916,7 @@ class Rlims2Reader(Reader):
         self.rePMID = re.compile(r'PMID{/NP_1}.*?{CP_2}([0-9]*?){/CP_2}')
         self.startPoints = None
 
-    def read(self):
+    def parse(self):
         res = {}
         f = self.open_file(self.filepath)
         for l in f:
@@ -1144,3 +1156,48 @@ class Rlims2Reader(Reader):
             events[e.id] = e
         del self.events
         self.events = events
+
+class MedlineReader(Reader):
+
+    mapHead = {'PMID-' : 'pmid',
+               'TI  -' : 'title',
+               'AB  -' : 'abstract',
+               'DP  -' : 'date',
+               'AU  -' : 'author',
+               'TA  -' : 'journal',
+               '     ' : 'previous'}
+
+    def __init__(self):
+        self.abstracts = {}
+
+    def parse(self,text):
+        lines = text.strip().split('\n')
+        return self.iterparse(lines)
+
+    def iterparse(self,iterator):
+        currpmid = None
+        for line in iterator:
+            line = line.rstrip()
+            if len(line) == 0:
+                pass
+
+            head = line[:5]
+            linetext = line[5:].strip()
+            if len(linetext) == 0:
+                continue
+
+            if self.mapHead.has_key(head):
+                if self.mapHead[head] == 'previous':
+                    if needle == 'abstract':
+                        linetext = ' ' + linetext
+                    self.abstracts[currpmid][needle] += linetext
+                else:
+                    needle = self.mapHead[head]
+                    if needle == 'pmid':
+                        currpmid = linetext
+                        self.abstracts[currpmid] = {}
+                    else:
+                        self.abstracts[currpmid][needle] = linetext
+
+        return self.abstracts
+        
