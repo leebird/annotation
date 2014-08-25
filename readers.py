@@ -1176,6 +1176,8 @@ class MedlineReader(Reader):
 
     def iterparse(self,iterator):
         currpmid = None
+        needle = None
+        self.abstracts = {}
         for line in iterator:
             line = line.rstrip()
             if len(line) == 0:
@@ -1187,7 +1189,7 @@ class MedlineReader(Reader):
                 continue
 
             if self.mapHead.has_key(head):
-                if self.mapHead[head] == 'previous':
+                if self.mapHead[head] == 'previous' and needle is not None:
                     if needle == 'abstract':
                         linetext = ' ' + linetext
                     self.abstracts[currpmid][needle] += linetext
@@ -1198,6 +1200,8 @@ class MedlineReader(Reader):
                         self.abstracts[currpmid] = {}
                     else:
                         self.abstracts[currpmid][needle] = linetext
+            else:
+                needle = None
 
         return self.abstracts
         
