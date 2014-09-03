@@ -44,14 +44,13 @@ class Reader(object):
         sys.stderr.flush()
 
     def parse(self,text):
-        raise NotImplementedError('Reader')
+        raise NotImplementedError('Reader.parse()')
 
     def parse_file(self,path,filename):
-        text = self.read_file()
-        return self.parse(text)
+        raise NotImplementedError('Reader.parse_file()')
 
     def parse_folder(self,path):
-        pass
+        raise NotImplementedError('Reader.parse_folder()')
         
     def read(self):
         raise NotImplementedError('Reader')
@@ -165,8 +164,9 @@ class AnnReader(Reader):
 
         self.annotation.add_exist_relation(rid,typeText,args[0],args[1])
 
-    def parse(self):
-        f = self.open_file(self.filepath)
+    def parse_file(self, path, filename):
+        filepath = os.path.join(path,filename)
+        f = self.open_file(filepath)
 
         if f is None:
             return
