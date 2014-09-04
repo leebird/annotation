@@ -5,6 +5,7 @@ import sys
 import re
 import os
 import codecs
+import json
 import itertools
 from pprint import pprint as pp
 from glob import glob
@@ -127,9 +128,9 @@ class CorpusReader(Reader):
 
 class AnnReader(Reader):
     def __init__(self,*args):
-        super(AnnReader,self).__init__(*args)
-
-    def parse_entity(self,line):
+        super(AnnReader,self).__init__(*args)        
+        
+    def parse_entity(self,line,annotation):
         fields = line.split('\t')
         try:
             info = fields[1].split(' ')            
@@ -137,34 +138,58 @@ class AnnReader(Reader):
             text = fields[2]
             typing = info[0]
             start = int(info[1])
-            end = int(info[2])
-            self.annotation.add_exist_entity(tid,typing,start,end,text)
+            end = int(info[2])            
+            annotation.add_exist_entity(tid,typing,start,end,text)
         except IndexError:
             self.warning('cannot parse entity',fields)
 
-    def parse_event(self,line):
+    def parse_event(self,line,annotation):
         fields = line.split('\t')
         tid = fields[0]
         info = fields[1].split(' ')     
         typing = info[0].split(':')
         typeId = typing[1]
         typeText = typing[0]        
+        
+        prop = {}
+        if len(fields) > 2:
+            prop = json.loads(fields[2])
 
         args = [arg.split(':') for arg in info[1:]]
 
-        self.annotation.add_exist_event(tid,typeText,typeId,args)
+        for arg in args:
+            arg[1] = annotation.get_entity(arg[1])
 
-    def parse_relation(self,line):
+        trigger = annotation.get_entity(typeId)
+        event = annotation.add_exist_event(tid,typeText,trigger,args)
+        
+        for key, values in prop.iteritems():
+            for val in values:
+                event.add_prop(key,val)
+
+    def parse_relation(self,line,annotation):
         fields = line.split('\t')
         rid = fields[0]
         info = fields[1].split(' ')     
         typeText = info[0]
+        
+        prop = {}
+        if len(fields) > 2:
+            prop = json.loads(fields[2])
 
         args = [arg.split(':') for arg in info[1:]]
 
-        self.annotation.add_exist_relation(rid,typeText,args[0],args[1])
+        for arg in args:
+            arg[1] = annotation.get_entity(arg[1])
+
+        rel = annotation.add_exist_relation(rid,typeText,args[0],args[1])
+
+        for key, values in prop.iteritems():
+            for val in values:
+                rel.add_prop(key,val)
 
     def parse_file(self, path, filename):
+        annotation = Annotation()
         filepath = os.path.join(path,filename)
         f = self.open_file(filepath)
 
@@ -174,7 +199,7 @@ class AnnReader(Reader):
         for line in f:
             line = line.strip()
             if line.startswith(Entity.linestart):
-                self.parse_entity(line)
+                self.parse_entity(line,annotation)
         '''        
         reset file pointer
         '''
@@ -183,12 +208,31 @@ class AnnReader(Reader):
         for line in f:
             line = line.strip()
             if line.startswith(Event.linestart):
-                self.parse_event(line)
+                self.parse_event(line,annotation)
             elif line.startswith(Relation.linestart):
-                self.parse_relation(line)
+                self.parse_relation(line,annotation)
             #raise Exception('can not parse: '+line)
 
-        return self.annotation
+        return annotation
+
+    def parse_folder(self, path):
+        res = {}
+
+        for root,_,files in os.walk(path):
+            for f in files:
+
+                if not f.endswith('.txt'):
+                    continue
+                print(f)
+                docid = f[:-4]
+
+                text = self.read_file(os.path.join(root,f))
+                anno = self.parse_file(root,docid+'.ann')
+                res[docid] = {}
+                res[docid]['text'] = text
+                res[docid]['annotation'] = anno
+
+        return res
 
 class SGMLReader(Reader):
     def __init__(self,*args):
