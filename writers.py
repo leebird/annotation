@@ -30,8 +30,7 @@ class AnnWriter(BionlpWriter):
     def __init__(self):
         super(AnnWriter,self).__init__()
 
-    def write(self,path,filename,annotation):
-        filepath = os.path.join(path,filename)
+    def write(self,filepath,annotation):
         f = codecs.open(filepath,'w+','utf-8')
 
         for k,t in annotation.get_entities().iteritems():

@@ -188,9 +188,8 @@ class AnnReader(Reader):
             for val in values:
                 rel.add_prop(key,val)
 
-    def parse_file(self, path, filename):
+    def parse_file(self, filepath):
         annotation = Annotation()
-        filepath = os.path.join(path,filename)
         f = self.open_file(filepath)
 
         if f is None:
@@ -235,13 +234,8 @@ class AnnReader(Reader):
         return res
 
 class SGMLReader(Reader):
-    def __init__(self,*args):
+    def __init__(self, *args):
         super(SGMLReader,self).__init__(*args)
-        self.annotation = {'T':{},'E':{},'R':{},'text':''}
-        self.tid = 1
-        self.entities = {}
-        self.entityMapping = False
-        self.cursor = 0
 
     def set_tag_entity_mapping(self,mapping):
         '''
@@ -313,8 +307,13 @@ class SGMLReader(Reader):
 
         return (entityText,entityStart,entityEnd)
 
-    def parse(self):
+    def parse_file(self, path, filename, mapping={}):
         text = self.read_file(self.filepath)
+        anno = self.parse(text, mapping)
+        return anno
+
+    def parse(self, text, mapping={}):
+        annotation = Annotation()
         openTags = self.get_open_bracket(text)
         closeTags = self.get_close_bracket(text)
         tags = list(openTags) + list(closeTags)
@@ -339,19 +338,22 @@ class SGMLReader(Reader):
                 if startTagText != tagText:
                     self.warning('different open-tag and close-tag')
                     continue
+
                 start = startTag.end()
                 end = tag.start()
                 entityText,start,end = self.get_entity_by_index(snippets,start,end)      
-                if self.entityMapping:
-                    category = self.mapping[tagText]
-                else:
+                try:
+                    category = mapping[tagText]
+                except KeyError:
                     category = tagText
-                self.annotation.add_entity(category,start,end,entityText)
+
+                annotation.add_entity(category,start,end,entityText)
             else:
                 openTagStack.append(tag)
 
         textpured = self.remove_tags(text)
-        return textpured,self.annotation
+        annotation.text = textpured
+        return annotation
 
 class A1A2Reader(Reader):
     def __init__(self,a1path,a1file,a2path,a2file):
