@@ -15,7 +15,7 @@ Reader
 * A1A2Reader - bionlp annotation a1, a2 format
 * SGMLReader - SGML format
 * RlimsReader - RLIMS-P text-mining tool normal format 
-* RlimsVerboseReader` - RLIMS-P verbose format
+* RlimsVerboseReader - RLIMS-P verbose format
 * Rlims2Reader - RLIMS-P standoff format
 
 Writer
