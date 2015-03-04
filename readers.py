@@ -8,8 +8,8 @@ import codecs
 import json
 import itertools
 from pprint import pprint as pp
-from annotation.annotate import *
-from annotation.utils import *
+from .annotate import *
+from .utils import *
 
 
 class Reader(object):

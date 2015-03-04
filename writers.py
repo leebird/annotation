@@ -3,7 +3,7 @@ import os
 import codecs
 import re
 import json
-from annotation.annotate import *
+from .annotate import *
 
 
 class BionlpWriter(object):
@@ -52,7 +52,6 @@ class BionlpWriter(object):
                                         event.category,
                                         event.trigger.property.get('id'),
                                         args)
-
 
     def relation_line(self, relation):
         """
