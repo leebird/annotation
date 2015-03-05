@@ -1,3 +1,7 @@
+import json
+from .utils import RandomGenerator
+
+
 class Entity(object):
     # template to print the entity
     template = '{0}_{1}_{2}_{3}'
@@ -26,7 +30,7 @@ class Entity(object):
             else:
                 return repr('Unknown error')
 
-    def __init__(self, category, start, end, text):
+    def __init__(self, category, start, end, text, id_=None, sanity_check=True):
         """A text span that refers to an entity
 
         :param category: entity category, e.g., gene
@@ -44,22 +48,25 @@ class Entity(object):
         self.start = start
         self.end = end
         self.text = text
-        self.property = Property()
+        self.id_ = id_
+        self.property = {}
+        self.sanity_check = sanity_check
 
-        # test if start/end is negative
-        if self.start < 0 or self.end < 0:
-            raise self.EntityIndexError(self.EntityIndexError.NEGATIVE_INDEX)
+        if self.sanity_check:
+            # test if start/end is negative
+            if self.start < 0 or self.end < 0:
+                raise self.EntityIndexError(self.EntityIndexError.NEGATIVE_INDEX)
 
-        # test if start equals end, which means the entity has 0 length
-        if self.start == self.end:
-            raise self.EntityIndexError(self.EntityIndexError.ZERO_INTERVAL)
+            # test if start equals end, which means the entity has 0 length
+            if self.start == self.end:
+                raise self.EntityIndexError(self.EntityIndexError.ZERO_INTERVAL)
 
-        # test if start is larger than end, which is invalid for indices of text span
-        if self.start > self.end:
-            raise self.EntityIndexError(self.EntityIndexError.NEGATIVE_INTERVAL)
+            # test if start is larger than end, which is invalid for indices of text span
+            if self.start > self.end:
+                raise self.EntityIndexError(self.EntityIndexError.NEGATIVE_INTERVAL)
 
-        if self.end - self.start != len(self.text):
-            raise self.EntityIndexError(self.EntityIndexError.INEQUAL_LENGTH)
+            if self.end - self.start != len(self.text):
+                raise self.EntityIndexError(self.EntityIndexError.INEQUAL_LENGTH)
 
     def __str__(self):
         return self.template.format(self.category, self.start, self.end, self.text)
@@ -69,7 +76,8 @@ class Entity(object):
 
     def __eq__(self, other):
         """
-        only compare type, start, end and text
+        only compare category, start, end and text,
+        but not id_?
         """
         if isinstance(other, self.__class__):
             return (self.category == other.category and
@@ -79,32 +87,44 @@ class Entity(object):
         else:
             return False
 
-class Event(object):
-    # template to print the event
+    def pack(self):
+        packed = {
+            'category': self.category,
+            'start': self.start,
+            'end': self.end,
+            'text': self.text,
+            'property': self.property
+        }
+        if self.id_ is not None:
+            packed['id'] = self.id_
+
+        return packed
+
+
+class Relation(object):
+    # template to print the relation
     template = '{category} ({trigger})'
 
-    def __init__(self, category, trigger=None, arguments=None):
+    def __init__(self, category, arguments=None, id_=None):
         """
-        An event structure with trigger and arguments
-        :param category: event type
+        An relation structure with trigger and arguments
+        :param category: relation type
         :type category: str
-        :param trigger: event trigger
-        :type trigger: Entity
-        :param arguments: a list of node objects
+        :param arguments: a list of node objects, including the trigger if applicable
         :type arguments: list
         :return: None
         :rtype: None
         """
         self.category = category
-        self.trigger = trigger
         if arguments is None:
             self.arguments = []
         else:
             self.arguments = arguments
-        self.property = Property()
+        self.id_ = id_
+        self.property = {}
 
     def __str__(self):
-        return self.template.format(category=self.category, trigger=self.trigger)
+        return self.template.format(category=self.category)
 
     def __repr__(self):
         return str(self)
@@ -112,7 +132,6 @@ class Event(object):
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return (self.category == other.category and
-                    self.trigger == other.trigger and
                     set(self.arguments) == set(other.arguments))
         else:
             return False
@@ -120,8 +139,8 @@ class Event(object):
     def add_argument(self, category, argument):
         """
         add new argument
-        :param argument: an argument is an entity or event
-        :type argument: Entity | Event
+        :param argument: an argument is an entity or relation
+        :type argument: Entity | Relation
         :param category: semantic category, e.g., agent
         :type category: str
         :return: None
@@ -129,15 +148,25 @@ class Event(object):
         """
         self.arguments.append(Node(category, argument))
 
+    def pack(self):
+        packed = {
+            'category': self.category,
+            'argument': [arg.pack for arg in self.arguments],
+            'property': self.property
+        }
+        if self.id_ is not None:
+            packed['id'] = self.id_
+        return packed
+
 
 class Node(object):
     def __init__(self, category, value):
         """
-        the argument must be an entity or another event.
+        the argument must be an entity or another relation.
         :param category: the semantic category of the argument, e.g., agent
         :type category: str
-        :param value: the actual entity or event
-        :type value: Entity | Event
+        :param value: the actual entity or relation
+        :type value: Entity | Relation
         :return: None
         :rtype: None
         """
@@ -145,13 +174,13 @@ class Node(object):
         self.category = category
 
         if (not self.is_leaf()) and (not self.is_tree()):
-            raise TypeError('Value must be an entity or event: ' + str(value))
+            raise TypeError('Value must be an entity or relation: ' + str(value))
 
     def is_leaf(self):
         return isinstance(self.value, Entity)
 
     def is_tree(self):
-        return isinstance(self.value, Event)
+        return isinstance(self.value, Relation)
 
     def indent_print(self, indent=0):
         if self.is_leaf():
@@ -160,65 +189,41 @@ class Node(object):
             return ' ' * indent + self.category + ': ' + str(self.value) + '\n' + \
                    '\n'.join([n.indent_print(indent + 2) for n in self.value.arguments])
 
-
-class Property(object):
-    def __init__(self):
-        """
-        property manager for entity/event/relation
-        """
-        self.vault = {}
-
-    def add(self, key, value):
-        self.vault[key] = value
-
-    def get(self, key):
-        try:
-            return self.vault[key]
-        except KeyError:
-            return None
-
-    def has(self, key, value):
-        if key in self.vault and self.vault[key] == value:
-            return True
-        else:
-            return False
-
-    def delete(self, key):
-        if key in self.vault:
-            del self.vault[key]
-
-    def update(self, vault):
-        """
-        update the property vault
-        :param vault: properties to be added to vault
-        :type vault: dict
-        :return: None
-        :rtype: None
-        """
-        self.vault.update(vault)
+    def pack(self):
+        return self.category, self.value.id_
 
 
 class Annotation(object):
-    template = '{0} entities, {1} events'
-
+    template = '{0} entities, {1} relations'
+    random_trial_limit = 10
+    
     def __init__(self):
         """
-        annotation storing text, entities and events
+        annotation storing text, entities and relations
         :return: None
         :rtype: None
         """
-        self.text = ''
         self.entities = []
-        self.events = []
-        self.special = []
+        self.relations = []
+        self.property = {}
+        self.text = ''
+        self.id_map = {}
 
     def __str__(self):
-        return self.template.format(len(self.entities), len(self.events))
+        return self.template.format(len(self.entities), len(self.relations))
 
-    def make_argument(self, category, value):
+    @staticmethod
+    def make_argument(category, value):
         return Node(category, value)
 
-    def add_entity(self, category, start, end, text):
+    def random_id(self):
+        for _ in range(self.random_trial_limit):
+            rid = RandomGenerator.random_id()
+            if rid not in self.id_map:
+                return rid
+        raise RuntimeError('random trial limit exceeded')
+
+    def add_entity(self, category, start, end, text, id_=None, sanity_check=True):
         """
         add a new entity
         :param category: entity category, e.g., Gene
@@ -232,8 +237,14 @@ class Annotation(object):
         :return: the created entity
         :rtype: Entity
         """
-        entity = Entity(category, start, end, text)
+        if id_ is not None and id_ in self.id_map:
+            raise KeyError('entity id already exists')
+        if id_ is None:
+            id_ = 'T' + self.random_id()
+
+        entity = Entity(category, start, end, text, id_, sanity_check)
         self.entities.append(entity)
+        self.id_map[id_] = entity
         return entity
 
     def add_entities(self, entities):
@@ -265,58 +276,68 @@ class Annotation(object):
     def get_entity_with_property(self, key, value):
         return [t for t in self.entities if t.property.has(key, value)]
 
-    def add_event(self, category, trigger=None, arguments=None):
+    def add_relation(self, category, arguments=None, id_=None):
         """
-        add a new event
-        :param category: event category, e.g., Regulation
+        add a new relation
+        :param category: relation category, e.g., Regulation
         :type category: str
-        :param trigger: the event trigger
+        :param trigger: the relation trigger
         :type trigger: Entity
-        :param arguments: a list of event arguments
+        :param arguments: a list of relation arguments
         :type arguments: list
-        :return: the created event
-        :rtype: Event
+        :return: the created relation
+        :rtype: Relation
         """
-        event = Event(category, trigger, arguments)
-        self.events.append(event)
-        return event
 
-    def get_event_category(self, category, complement=False):
+        if id_ is not None and id_ in self.id_map:
+            raise KeyError('relation id already exists')
+        if id_ is None:
+            id_ = 'R' + self.random_id()
+        
+        relation = Relation(category, arguments, id_)
+        self.relations.append(relation)
+        self.id_map[id_] = relation
+        return relation
+
+    def get_relation_with_property(self, key, value):
+        return [t for t in self.relations if t.property.has(key, value)]
+
+    def get_relation_category(self, category, complement=False):
         """
-        get a list of events of the same category
-        :param category: event category
+        get a list of relations of the same category
+        :param category: relation category
         :type category: str
         :param complement: set True to get all other categories but the input one
         :type complement: bool
-        :return: a list of events of the input category
+        :return: a list of relations of the input category
         :rtype: list
         """
         if complement:
-            return [e for e in self.events if e.category != category]
+            return [e for e in self.relations if e.category != category]
         else:
-            return [e for e in self.events if e.category == category]
+            return [e for e in self.relations if e.category == category]
 
-    def get_event_without_trigger(self):
-        return [event for event in self.events if event.trigger is None]
+    def get_relation_no_trigger(self):
+        return [relation for relation in self.relations if relation.trigger is None]
 
-    def get_event_with_trigger(self):
-        return [event for event in self.events if event.trigger is not None]
+    def get_relation_with_trigger(self):
+        return [relation for relation in self.relations if relation.trigger is not None]
 
     def has_entity(self, entity):
         if entity in self.entities:
             return True
         return False
 
-    def has_event(self, event):
-        if event in self.events:
+    def has_relation(self, relation):
+        if relation in self.relations:
             return True
         return False
 
     def remove_entity(self, entity):
         self.entities.remove(entity)
-        
-    def remove_event(self, event):
-        self.events.remove(event)
+
+    def remove_relation(self, relation):
+        self.relations.remove(relation)
 
     def remove_included(self):
         """
@@ -379,3 +400,70 @@ class Annotation(object):
                     continue
                 if k.start < r.end and k.end > r.start:
                     self.entities.remove(r)
+    def pack(self):
+        packed = {
+            'text': self.text,
+            'property': self.property,
+            'entities': [entity.pack() for entity in self.entities],
+            'relations': [relation.pack for relation in self.relations]
+        }
+        return packed
+
+    @classmethod
+    def dumps(cls, annotation, format='json'):
+        """ dump annotation into json object
+        :param annotation: the annotation to be dumped
+        :type annotation: Annotation
+        :param format: the format the annotation dumped to
+        :type format: str
+        :return: the dumped object
+        :rtype: str
+        """
+        if format == 'json':
+            return json.dumps(annotation.pack())
+
+    @classmethod
+    def loads(cls, data, format='json'):
+        """load annotation from json object
+        """
+        annotation = Annotation()
+        if format == 'json':
+            packed = json.loads(data)
+            annotation.text = packed.get('text')
+            annotation.property = packed.get('property')
+            entities = packed.get('entities')
+            relations = packed.get('relations')
+
+            for entity in entities:
+                sanity_check = entity.get('property').get('sanity_check')
+                category = entity.get('category')
+                start = entity.get('start')
+                end = entity.get('end')
+                text = entity.get('text')
+                id_ = entity.get('id')
+
+                if sanity_check:
+                    ent = annotation.add_entity(category, start, end, text, id_)
+                else:
+                    ent = annotation.add_entity(category, start, end, text, id_, False)
+
+            for relation in relations:
+                category = relation.get('category')
+                property = relation.get('property')
+
+                id_ = relation.get('id')
+                rel = annotation.add_relation(category, id_=id_)
+                rel.property = property
+
+            for relation in relations:
+                arguments = relation.get('argument')
+                id_ = relation.get('id')
+                rel = annotation.id_map.get(id_)
+
+                for arg in arguments:
+                    arg_category = arg[0]
+                    arg_id = arg[1]
+                    actual_arg = annotation.id_map.get(arg_id)
+                    rel.add_argument(arg_category, actual_arg)
+
+        return annotation

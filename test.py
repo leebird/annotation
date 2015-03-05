@@ -110,7 +110,7 @@ class TestAnnotation(unittest.TestCase):
         trigger = Entity('Trigger', 4, 10, 'target')
         arguments = [Node('Agent', Entity('Gene', 0, 3, 'BAD')),
                      Node('Theme', Entity('Gene', 11, 14, 'BAD'))]
-        self.annotation.add_event('Target', trigger, arguments)
+        self.annotation.add_relation('Target', trigger, arguments)
 
     def test_get_entity_category(self):
         entity = self.annotation.add_entity('Gene', 0, 3, 'BAD')
@@ -127,20 +127,20 @@ class TestAnnotation(unittest.TestCase):
         trigger = Entity('Trigger', 4, 10, 'target')
         arguments = [Node('Agent', Entity('Gene', 0, 3, 'BAD')),
                      Node('Theme', Entity('Gene', 11, 14, 'BAD'))]
-        event = self.annotation.add_event('Target', trigger, arguments)
-        self.assertEqual(self.annotation.get_event_category('Target'), [event])
+        event = self.annotation.add_relation('Target', trigger, arguments)
+        self.assertEqual(self.annotation.get_relation_category('Target'), [event])
 
     def test_get_event_category_complement(self):
         trigger = Entity('Trigger', 4, 10, 'target')
         arguments = [Node('Agent', Entity('Gene', 0, 3, 'BAD')),
                      Node('Theme', Entity('Gene', 11, 14, 'BAD'))]
-        self.annotation.add_event('Target', trigger, arguments)
+        self.annotation.add_relation('Target', trigger, arguments)
 
         trigger = Entity('Trigger', 4, 12, 'regulate')
         arguments = [Node('Agent', Entity('Gene', 0, 3, 'BAD')),
                      Node('Theme', Entity('Gene', 11, 14, 'BAD'))]
-        event = self.annotation.add_event('Regulation', trigger, arguments)
-        self.assertEqual(self.annotation.get_event_category('Target', True), [event])
+        event = self.annotation.add_relation('Regulation', trigger, arguments)
+        self.assertEqual(self.annotation.get_relation_category('Target', True), [event])
 
     def test_remove_included(self):
         entity = self.annotation.add_entity('Gene', 0, 5, 'hBAD1')

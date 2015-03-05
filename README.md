@@ -6,7 +6,7 @@ Frequently-used utility classes in my daily coding.
 Annotation
 ----------
 * Entity
-* Event
+* Relation
 * Relation
 
 Reader

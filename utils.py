@@ -2,6 +2,9 @@ __author__ = 'leebird'
 import re
 import codecs
 import os
+import random
+import string
+
 
 class TextProcessor(object):
     pattern_bracket = re.compile(r'<[^<>]*?>')
@@ -45,3 +48,11 @@ class FileProcessor(object):
         f = codecs.open(filepath, flag, 'utf-8')
         f.write(content)
         f.close()
+
+
+class RandomGenerator(object):
+    @staticmethod
+    def random_id(length=10):
+        # http://stackoverflow.com/questions/2257441/random-string-generation-with-upper-case-letters-and-digits-in-python
+        # generate a random id
+        return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))

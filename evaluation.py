@@ -49,7 +49,7 @@ class Evaluation(object):
     @classmethod
     def get_event_category_set(cls, docid, annotation, category):
         event_set = set()
-        events = annotation.get_event_category(category)
+        events = annotation.get_relation_category(category)
         for event in events:
             event_set.add((docid, str(event)))
         return event_set

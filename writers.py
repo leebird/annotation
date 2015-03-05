@@ -3,7 +3,7 @@ import os
 import codecs
 import re
 import json
-from annotation.annotate import *
+from .annotate import *
 
 
 class BionlpWriter(object):
@@ -38,7 +38,7 @@ class BionlpWriter(object):
         """
         generate a line for an event according to BioNLP format
         :param event: an event
-        :type event: Event
+        :type event: Relation
         :return: a line containing event information
         :rtype: str
         """
@@ -53,12 +53,11 @@ class BionlpWriter(object):
                                         event.trigger.property.get('id'),
                                         args)
 
-
     def relation_line(self, relation):
         """
         generate a line for an relation according to BioNLP format
         :param relation: an relation (an event without trigger word)
-        :type relation: Event
+        :type relation: Relation
         :return: a line containing relation information
         :rtype: str
         """
@@ -118,8 +117,8 @@ class BionlpWriter(object):
                 next_index += 1
 
         reindex(annotation.entities, 'T')
-        reindex(annotation.get_event_with_trigger(), 'E')
-        reindex(annotation.get_event_without_trigger(), 'R')
+        reindex(annotation.get_relation_with_trigger(), 'E')
+        reindex(annotation.get_relation_no_trigger(), 'R')
 
 
 class AnnWriter(BionlpWriter):
