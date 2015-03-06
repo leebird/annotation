@@ -404,8 +404,8 @@ class Annotation(object):
         packed = {
             'text': self.text,
             'property': self.property,
-            'entities': [entity.pack() for entity in self.entities],
-            'relations': [relation.pack for relation in self.relations]
+            'entity_set': [entity.pack() for entity in self.entities],
+            'relation_set': [relation.pack for relation in self.relations]
         }
         return packed
 
