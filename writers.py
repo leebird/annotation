@@ -11,10 +11,23 @@ class BionlpWriter(object):
     event_format = u'{0}\t{1}:{2} {3}\n'
     relation_format = u'{0}\t{1} {2}\n'
     modification_format = u'{0}\t{1}\n'
-
+    equiv_format = u'*\tEquiv {0} {1}\n'
+    
     def __init__(self):
         pass
 
+    @staticmethod
+    def has_trigger(relation):
+        trigger = [arg for arg in relation.arguments if arg.role == 'Trigger']
+        return len(trigger) > 0
+
+    @staticmethod
+    def get_trigger(relation):
+        print('hahahaha')
+        print(relation.arguments)
+        trigger = [arg for arg in relation.arguments if arg.role == 'Trigger']
+        return trigger[0].value if len(trigger) > 0 else None
+    
     def entity_line(self, entity):
         """
         generate a line for an entity according to BioNLP format
@@ -42,15 +55,16 @@ class BionlpWriter(object):
         :return: a line containing event information
         :rtype: str
         """
-        args = [a.category + ':' + a.value.property.get('id') for a in event.arguments]
+        args = [a.role + ':' + a.value.property.get('id') for a in event.arguments]
         args = ' '.join(args).strip()
         event_id = event.property.get('id')
 
         if len(args) == 0 or event_id is None:
             return ''
+        
         return self.event_format.format(event.property.get('id'),
                                         event.category,
-                                        event.trigger.property.get('id'),
+                                        self.get_trigger(event).property.get('id'),
                                         args)
 
     def relation_line(self, relation):
@@ -61,7 +75,7 @@ class BionlpWriter(object):
         :return: a line containing relation information
         :rtype: str
         """
-        args = [a.category + ':' + a.value.property.get('id') for a in relation.arguments]
+        args = [a.role + ':' + a.value.property.get('id') for a in relation.arguments]
         args = ' '.join(args).strip()
 
         relation_id = relation.property.get('id')
@@ -113,7 +127,7 @@ class BionlpWriter(object):
                 next_index = 1
 
             for candidate in unindexed_candidates:
-                candidate.property.add('id', prefix + str(next_index))
+                candidate.property['id'] = prefix + str(next_index)
                 next_index += 1
 
         reindex(annotation.entities, 'T')
@@ -134,17 +148,20 @@ class AnnWriter(BionlpWriter):
             line = self.entity_line(t)
             f.write(line)
 
-        for e in annotation.events:
+        for e in annotation.relations:
             if e.property.get('negated') is not None:
                 modifications.append('Negation '+e.property.get('id'))
-            if e.trigger is None:
-                line = self.relation_line(e)
-            else:
+            if self.has_trigger(e):
                 line = self.event_line(e)
+            else:
+                line = self.relation_line(e)
             f.write(line)
-
-        for l in annotation.special:
-            f.write(l + '\n')
+        
+        # write equive lines
+        for rel, pairs in annotation.property.items():
+            if rel == 'Equiv':
+                line = self.equiv_format.format(pairs[0], pairs[1])
+                f.write(line)
 
         for i,mod_event in enumerate(modifications):
             mod_id = 'M'+str(i+1)

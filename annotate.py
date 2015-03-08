@@ -12,21 +12,24 @@ class Entity(object):
         NEGATIVE_INTERVAL = 1
         NEGATIVE_INDEX = 2
         INEQUAL_LENGTH = 3
+        UNMATCHED_TEXT = 4
 
         # exception messages
         MESSAGES = {
-            ZERO_INTERVAL: 'Zero interval of the text span',
-            NEGATIVE_INTERVAL: 'Negative interval of the text span',
-            NEGATIVE_INDEX: 'Negative index of the text span',
-            INEQUAL_LENGTH: 'Interval length and text length are not equal'
+            ZERO_INTERVAL: 'Zero interval of the text span.',
+            NEGATIVE_INTERVAL: 'Negative interval of the text span.',
+            NEGATIVE_INDEX: 'Negative index of the text span.',
+            INEQUAL_LENGTH: 'Interval length and text length are not equal.',
+            UNMATCHED_TEXT: 'Document text and entity text are not matched.'
         }
 
-        def __init__(self, value):
+        def __init__(self, value, msg=''):
             self.value = value
+            self.msg = msg
 
         def __str__(self):
             if self.value in self.MESSAGES:
-                return repr(self.MESSAGES[self.value])
+                return repr(self.MESSAGES[self.value] + ' msg: ' + self.msg)
             else:
                 return repr('Unknown error')
 
@@ -66,7 +69,8 @@ class Entity(object):
                 raise self.EntityIndexError(self.EntityIndexError.NEGATIVE_INTERVAL)
 
             if self.end - self.start != len(self.text):
-                raise self.EntityIndexError(self.EntityIndexError.INEQUAL_LENGTH)
+                raise self.EntityIndexError(self.EntityIndexError.INEQUAL_LENGTH,
+                                            ' %s %s %s' % (self.text, self.start, self.end))
 
     def __str__(self):
         return self.template.format(self.category, self.start, self.end, self.text)
@@ -103,7 +107,7 @@ class Entity(object):
 
 class Relation(object):
     # template to print the relation
-    template = '{category} ({trigger})'
+    template = '{category}'
 
     def __init__(self, category, arguments=None, id_=None):
         """
@@ -148,6 +152,7 @@ class Relation(object):
         """
         self.arguments.append(Node(category, argument))
 
+
     def pack(self):
         packed = {
             'category': self.category,
@@ -160,7 +165,7 @@ class Relation(object):
 
 
 class Node(object):
-    def __init__(self, category, value):
+    def __init__(self, role, value):
         """
         the argument must be an entity or another relation.
         :param category: the semantic category of the argument, e.g., agent
@@ -171,7 +176,7 @@ class Node(object):
         :rtype: None
         """
         self.value = value
-        self.category = category
+        self.role = role
 
         if (not self.is_leaf()) and (not self.is_tree()):
             raise TypeError('Value must be an entity or relation: ' + str(value))
@@ -184,20 +189,20 @@ class Node(object):
 
     def indent_print(self, indent=0):
         if self.is_leaf():
-            return ' ' * indent + self.category + ': ' + str(self.value)
+            return ' ' * indent + self.role + ': ' + str(self.value)
         else:
-            return ' ' * indent + self.category + ': ' + str(self.value) + '\n' + \
+            return ' ' * indent + self.role + ': ' + str(self.value) + '\n' + \
                    '\n'.join([n.indent_print(indent + 2) for n in self.value.arguments])
 
     def pack(self):
-        return self.category, self.value.id_
+        return self.role, self.value.id_
 
 
 class Annotation(object):
     template = '{0} entities, {1} relations'
     random_trial_limit = 10
-    
-    def __init__(self):
+
+    def __init__(self, text_sanity_check=True):
         """
         annotation storing text, entities and relations
         :return: None
@@ -208,6 +213,7 @@ class Annotation(object):
         self.property = {}
         self.text = ''
         self.id_map = {}
+        self.text_sanity_check = text_sanity_check
 
     def __str__(self):
         return self.template.format(len(self.entities), len(self.relations))
@@ -242,6 +248,12 @@ class Annotation(object):
         if id_ is None:
             id_ = 'T' + self.random_id()
 
+        if self.text_sanity_check and sanity_check:
+            if self.text[start:end] != text:
+                raise Entity.EntityIndexError(Entity.EntityIndexError.UNMATCHED_TEXT,
+                                              text + ' | ' + self.text[start:end] +
+                                              (' %s %s' % (start, end)))
+
         entity = Entity(category, start, end, text, id_, sanity_check)
         self.entities.append(entity)
         self.id_map[id_] = entity
@@ -274,7 +286,7 @@ class Annotation(object):
             return [t for t in self.entities if t.category == category]
 
     def get_entity_with_property(self, key, value):
-        return [t for t in self.entities if t.property.has(key, value)]
+        return [t for t in self.entities if value is not None and t.property.get(key) == value]
 
     def add_relation(self, category, arguments=None, id_=None):
         """
@@ -293,7 +305,7 @@ class Annotation(object):
             raise KeyError('relation id already exists')
         if id_ is None:
             id_ = 'R' + self.random_id()
-        
+
         relation = Relation(category, arguments, id_)
         self.relations.append(relation)
         self.id_map[id_] = relation
@@ -318,10 +330,20 @@ class Annotation(object):
             return [e for e in self.relations if e.category == category]
 
     def get_relation_no_trigger(self):
-        return [relation for relation in self.relations if relation.trigger is None]
+        triggered = []
+        for relation in self.relations:
+            trigger = [arg for arg in relation.arguments if arg.role == 'Trigger']
+            if len(trigger) == 0:
+                triggered.append(relation)
+        return triggered
 
     def get_relation_with_trigger(self):
-        return [relation for relation in self.relations if relation.trigger is not None]
+        triggered = []
+        for relation in self.relations:
+            trigger = [arg for arg in relation.arguments if arg.role == 'Trigger']
+            if len(trigger) > 0:
+                triggered.append(relation)
+        return triggered
 
     def has_entity(self, entity):
         if entity in self.entities:
@@ -400,6 +422,7 @@ class Annotation(object):
                     continue
                 if k.start < r.end and k.end > r.start:
                     self.entities.remove(r)
+
     def pack(self):
         packed = {
             'text': self.text,

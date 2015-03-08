@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import print_function
 import sys
 import re
@@ -59,7 +58,8 @@ class AnnParser(Parser):
                 # handle appended information in entity line
                 self.entity_handler(entity, fields[3:])
 
-        except Entity.EntityIndexError:
+        except Entity.EntityIndexError as e:
+            print(e)
             print('entity index error ' + line, file=sys.stderr)
 
     def parse_event(self, line, annotation):
@@ -131,7 +131,7 @@ class AnnParser(Parser):
 
     def parse_modification(self, line, annotation):
         tokens = line.split('\t')
-        # mod_id is not used now
+        # mod_id, e.g., M1, M2, is not used now
         mod_id = tokens[0]
         modification, eid = tokens[1].split(' ')
         event = annotation.id_map.get(eid)
@@ -139,7 +139,7 @@ class AnnParser(Parser):
             event.property[modification] = True
 
     def parse_file(self, filepath):
-        annotation = Annotation()
+        annotation = Annotation(text_sanity_check=False)
         f = FileProcessor.open_file(filepath)
 
         if f is None:
@@ -329,7 +329,7 @@ class SGMLParser(Parser):
 # self.a2filepath = os.path.join(a2path, a2file)
 # # print self.filepath
 #
-#     def parse_entity(self, line):
+# def parse_entity(self, line):
 #         fields = line.split('\t')
 #         info = fields[1].split(' ')
 #         tid = fields[0]
@@ -391,35 +391,46 @@ class SGMLParser(Parser):
 
 
 class RlimsParser(Parser):
-    def __init__(self, *args):
-        super(RlimsParser, self).__init__(*args)
+    def __init__(self):
+        super(RlimsParser, self).__init__()
+        
+        # seperator used to divide result for each PMID
         self.separator = '{NP_1}PMID'
-        self.hdOutput = 'OUTPUT '
-        self.hdTrigger = 'PTM ='
-        self.hdInducer = 'Inducer ='
-        self.hdKinase = 'Kinase ='
-        self.hdSubstrate = 'Substrate ='
-        self.hdSite = 'Site ='
-        self.hdNorm = 'NORM='
-        self.hdSynonym = 'SYNONYM='
-        self.rePMID = re.compile(r'PMID{/NP_1}.*?\{CP_2\}([0-9]*?)\{/CP_2\}')
-        self.reTrigger = re.compile(r'\(\{(.*?)\};(.*?)\)')
-        self.reArg = re.compile(r'\{(.*?)\}(.*?)\{/(.*?)\}')
+        
+        # line starters used in result blocks
+        self.hd_output = 'OUTPUT '
+        self.hd_trigger = 'PTM ='
+        self.hd_inducer = 'Inducer ='
+        self.hd_kinase = 'Kinase ='
+        self.hd_substrate = 'Substrate ='
+        self.hd_site = 'Site ='
+        self.hd_norm = 'NORM='
+        self.hd_synonym = 'SYNONYM='
+        
+        # regex to extract information from lines in result block
+        self.regex_pmid = re.compile(r'PMID{/NP_1}.*?\{CP_2\}([0-9]*?)\{/CP_2\}')
+        self.regex_trigger = re.compile(r'\(\{(.*?)\};(.*?)\)')
+        self.regex_arg = re.compile(r'\{(.*?)\}(.*?)\{/(.*?)\}')
+        self.regex_amino = re.compile(r'^\(\{(.*?)\}(.*?)\{/(.*?)\};')
+        self.regex_site = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\};')
+        self.regex_site_other = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\}\)$')
+        self.regex_tagged = re.compile(r'(\{(.*?)\})(.*?)(\{/.*?\})')
 
-        self.reAmino = re.compile(r'^\(\{(.*?)\}(.*?)\{/(.*?)\};')
-        self.reSite = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\};')
-        self.reSiteOther = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\}\)$')
-
-        self.reTagged = re.compile(r'(\{(.*?)\})(.*?)(\{/.*?\})')
-
+        # status used when reading rlims result files
+        # e.g., there may be two substrates, but the second one won't
+        # start with hd_substrate
         self.status = 0
-        self.mask = {11: 'kinase',
-                     12: 'substrate',
-                     13: 'site',
-                     14: 'trigger',
-                     15: 'inducer'}
+        self.mask = {
+            11: 'kinase',
+            12: 'substrate',
+            13: 'site',
+            14: 'trigger',
+            15: 'inducer'
+        }
 
     def split(self, text):
+        """ split the whole text into result blocks
+        """
         blocks = text.split(self.separator)
         blocks = [self.separator + b for b in blocks[1:]]
         return blocks
@@ -440,7 +451,7 @@ class RlimsParser(Parser):
             if len(lines) == 0:
                 continue
 
-            match = self.rePMID.search(lines[0])
+            match = self.regex_pmid.search(lines[0])
             if match:
                 self.pmid = match.group(1)
             else:
@@ -460,25 +471,25 @@ class RlimsParser(Parser):
         return res
 
     def process_line(self, l, res):
-        if l.startswith(self.hdOutput):
+        if l.startswith(self.hd_output):
             self.status = 1
             output = self.init_output()
             res['output'].append(output)
-        elif l.startswith(self.hdNorm):
+        elif l.startswith(self.hd_norm):
             self.status = 2
             res['norm'].append([l])
-        elif l.startswith(self.hdSynonym):
+        elif l.startswith(self.hd_synonym):
             self.status = 3
             res['norm'][-1].append(l)
-        elif l.startswith(self.hdKinase):
+        elif l.startswith(self.hd_kinase):
             self.status = 11
-        elif l.startswith(self.hdSubstrate):
+        elif l.startswith(self.hd_substrate):
             self.status = 12
-        elif l.startswith(self.hdSite):
+        elif l.startswith(self.hd_site):
             self.status = 13
-        elif l.startswith(self.hdTrigger):
+        elif l.startswith(self.hd_trigger):
             self.status = 14
-        elif l.startswith(self.hdInducer):
+        elif l.startswith(self.hd_inducer):
             self.status = 15
         elif len(l.strip()) == 0:
             self.status = 0
@@ -495,7 +506,7 @@ class RlimsParser(Parser):
     def parse_line(self, line):
         res = None
         if self.status == 14:
-            match = self.reTrigger.search(line)
+            match = self.regex_trigger.search(line)
             if match:
                 tag = match.group(1)
                 text = match.group(2)
@@ -506,15 +517,15 @@ class RlimsParser(Parser):
             text = None
             amino = None
             siteOther = None
-            match = self.reSite.search(line)
+            match = self.regex_site.search(line)
             if match:
                 tag = match.group(1)
                 text = match.group(2)
                 text = TextProcessor.remove_tags(text)
-            match = self.reAmino.search(line)
+            match = self.regex_amino.search(line)
             if match:
                 amino = match.group(2)
-            match = self.reSiteOther.search(line)
+            match = self.regex_site_other.search(line)
             if match:
                 if text is None:
                     text = match.group(2)
@@ -527,7 +538,7 @@ class RlimsParser(Parser):
 
         elif self.status == 11 or self.status == 12 \
                 or self.status == 15:
-            match = self.reArg.search(line)
+            match = self.regex_arg.search(line)
             if match:
                 tag = match.group(1)
                 text = match.group(2)
@@ -549,9 +560,9 @@ class RlimsParser(Parser):
         braced = ' '.join(sens)
         sens = [TextProcessor.remove_tags(s) for s in taggedSens]
         text = ' '.join(sens)
-        match = self.reTagged.search(braced)
+        match = self.regex_tagged.search(braced)
         while (match):
-            match = self.reTagged.search(braced)
+            match = self.regex_tagged.search(braced)
             tag = match.group(2)
             openTag = match.group(1)
             closeTag = match.group(4)
@@ -561,7 +572,7 @@ class RlimsParser(Parser):
             tagIndices[tag] = (start, end, phrase)
             braced = braced.replace(openTag, '')
             braced = braced.replace(closeTag, '')
-            match = self.reTagged.search(braced)
+            match = self.regex_tagged.search(braced)
         return tagIndices
 
 
