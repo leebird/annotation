@@ -516,7 +516,8 @@ class RlimsVerboseReader(RlimsParser):
         self.hd_method = '\tMethod='
         self.regex_method = re.compile(r'\[(.*?)\]')
         self.is_method = False
-        self.regex_tag = re.compile(r'\{/(.*?)\}')
+        self.regex_close_tag = re.compile(r'\{/(.*?)\}')
+        self.regex_open_tag = re.compile(r'\{(.*?)\}')
         self.annotation = Annotation()
 
     def init_output(self):
@@ -553,11 +554,16 @@ class RlimsVerboseReader(RlimsParser):
                     return None
 
                 phrase = TextProcessor.remove_tags(subtokens[0])
-                match = self.regex_tag.search(subtokens[0])
+                match = self.regex_close_tag.search(subtokens[0])
                 if match:
                     tag = match.group(1)
                 else:
-                    print('NP Phrase not found ' + t, file=sys.stderr)
+                    match = self.regex_open_tag.search(subtokens[0])
+                    if match:
+                        tag = match.group(1)
+                    else:
+                        print('NP Phrase not found ' + t, file=sys.stderr)
+                        continue
 
                 for st in subtokens[1:]:
                     elements = st.split('|')
