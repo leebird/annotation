@@ -112,8 +112,7 @@ class AnnParser(Parser):
             self.relation_handler(relation, fields[2:])
 
     def parse_equiv(self, line, annotation):
-        """
-        parse equiv relation, e.g., Equiv T3 T4
+        """ parse equiv relation, e.g., Equiv T3 T4
         :param line: 
         :type line: 
         :param annotation: 
@@ -185,12 +184,12 @@ class AnnParser(Parser):
 
 class SGMLParser(Parser):
     def __init__(self, mapping=None, tag_handler=None):
-        '''
+        """
         set mapping from tag name to entity type
         if <pro> means Protein, then a mapping from
         'pro' to 'Protein' should be set to have
         the entity typed 'Protein' in the output
-        '''
+        """
         super(SGMLParser, self).__init__()
         if mapping is not None:
             self.mapping = mapping
@@ -200,19 +199,19 @@ class SGMLParser(Parser):
         self.tag_handler = tag_handler
 
     @staticmethod
-    def get_open_bracket(self, text):
+    def get_open_bracket(text):
         return TextProcessor.pattern_open_bracket.finditer(text)
 
     @staticmethod
-    def get_close_bracket(self, text):
+    def get_close_bracket(text):
         return TextProcessor.pattern_close_bracket.finditer(text)
 
     @staticmethod
-    def is_close(self, tag):
+    def is_close(tag):
         return tag.startswith('</')
 
     @staticmethod
-    def get_text_snippet(self, text, tags):
+    def get_text_snippet(text, tags):
         """
         get text snippets between each two tags
         entity text will be between an open-tag and a close-tag
@@ -229,16 +228,16 @@ class SGMLParser(Parser):
         return snippets
 
     @staticmethod
-    def get_entity_by_index(self, snippets, start, end):
+    def get_entity_by_index(snippets, start, end):
         """get entity by its tags' positions
         """
         entity_text, entity_start, entity_end = '', -1, -1
         missing_end = False
         current_pos = 0
 
-        '''
+        """
         sort indices from text start to text end
-        '''
+        """
         indices = sorted(snippets.keys(), key=lambda a: a[0])
 
         for pos in indices:
@@ -293,11 +292,11 @@ class SGMLParser(Parser):
                     if 'tag' in tag_info:
                         startTagText = tag_info['tag']
 
-                '''
+                """
                 open-tag and close-tag should have the same tag name
                 if not skip this pair and continue
                 if this happens, at least two entities are skip
-                '''
+                """
                 if startTagText != tagText:
                     print('different open and close tags', startTagText, tagText, file=sys.stderr)
                     continue
@@ -323,80 +322,13 @@ class SGMLParser(Parser):
         return annotation
 
 
-# class A1A2Parser(Parser):
-# def __init__(self, a1path, a1file, a2path, a2file):
-# self.a1filepath = os.path.join(a1path, a1file)
-# self.a2filepath = os.path.join(a2path, a2file)
-# # print self.filepath
-#
-# def parse_entity(self, line):
-#         fields = line.split('\t')
-#         info = fields[1].split(' ')
-#         tid = fields[0]
-#         text = fields[2]
-#         typing = info[0]
-#         start = int(info[1])
-#         end = int(info[2])
-#         self.annotation.add_exist_entity(tid, typing, start, end, text)
-#
-#     def parse_event(self, line):
-#         fields = line.split('\t')
-#         tid = fields[0]
-#         info = fields[1].split(' ')
-#         typing = info[0].split(':')
-#         typeId = typing[1]
-#         typeText = typing[0]
-#
-#         args = [arg.split(':') for arg in info[1:]]
-#
-#         self.annotation.add_exist_event(tid, typeText, typeId, args)
-#
-#     def parse_relation(self, line):
-#         fields = line.split('\t')
-#         rid = fields[0]
-#         info = fields[1].split(' ')
-#         typeText = info[0]
-#
-#         args = [arg.split(':') for arg in info[1:]]
-#
-#         self.annotation.add_exist_relation(rid, typeText, args[0], args[1])
-#
-#     def parse(self):
-#         f = self.open_file(self.a1filepath)
-#         for line in f:
-#             line = line.strip()
-#             if line.startswith(Entity.linestart):
-#                 self.parse_entity(line)
-#         f.close()
-#
-#         f = self.open_file(self.a2filepath)
-#         for line in f:
-#             line = line.strip()
-#             if line.startswith(Entity.linestart):
-#                 entity = self.parse_entity(line)
-#
-#         # reset file pointer
-#         f.seek(0)
-#
-#         for line in f:
-#             line = line.strip()
-#             if line.startswith(Event.linestart):
-#                 self.parse_event(line)
-#             elif line.startswith(Relation.linestart):
-#                 self.parse_relation(line)
-#                 # raise Exception('can not parse: '+line)
-#
-#         f.close()
-#         return annotation
-
-
 class RlimsParser(Parser):
     def __init__(self):
         super(RlimsParser, self).__init__()
-        
+
         # seperator used to divide result for each PMID
         self.separator = '{NP_1}PMID'
-        
+
         # line starters used in result blocks
         self.hd_output = 'OUTPUT '
         self.hd_trigger = 'PTM ='
@@ -406,12 +338,19 @@ class RlimsParser(Parser):
         self.hd_site = 'Site ='
         self.hd_norm = 'NORM='
         self.hd_synonym = 'SYNONYM='
-        
+
         # regex to extract information from lines in result block
-        self.regex_pmid = re.compile(r'PMID{/NP_1}.*?\{CP_2\}([0-9]*?)\{/CP_2\}')
+        # {NP_1}PMID{/NP_1} - {CP_2}19035116{/CP_2}
+        self.regex_pmid = re.compile(r'PMID\{/NP_1\}.*?\{.*?\}[^0-9]*?([0-9]*?)[^0-9]*?\{/.*?\}')
+
+        # PTM = ({NP_P_12};phosphorylated)
         self.regex_trigger = re.compile(r'\(\{(.*?)\};(.*?)\)')
+
+        # Substrate = ({NP_P_12}<p>p27</p>{/NP_P_12};-)
         self.regex_arg = re.compile(r'\{(.*?)\}(.*?)\{/(.*?)\}')
-        self.regex_amino = re.compile(r'^\(\{(.*?)\}(.*?)\{/(.*?)\};')
+
+        # Site = ({NP_P_12}10{/NP_P_12};{NP_P_12}Ser{/NP_P_12};UNK)
+        self.regex_amino = re.compile(r'\(\{(.*?)\}(.*?)\{/(.*?)\};')
         self.regex_site = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\};')
         self.regex_site_other = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\}\)$')
         self.regex_tagged = re.compile(r'(\{(.*?)\})(.*?)(\{/.*?\})')
@@ -516,7 +455,7 @@ class RlimsParser(Parser):
             tag = None
             text = None
             amino = None
-            siteOther = None
+            site_other = None
             match = self.regex_site.search(line)
             if match:
                 tag = match.group(1)
@@ -554,35 +493,35 @@ class RlimsParser(Parser):
         res = self._parse(blocks)
         return res
 
-    def index_tag(self, taggedSens):
-        tagIndices = {}
-        sens = [TextProcessor.remove_bracket(s) for s in taggedSens]
+    def index_tag(self, tagged_sentences):
+        tag_index = {}
+        sens = [TextProcessor.remove_bracket(s) for s in tagged_sentences]
         braced = ' '.join(sens)
-        sens = [TextProcessor.remove_tags(s) for s in taggedSens]
+        sens = [TextProcessor.remove_tags(s) for s in tagged_sentences]
         text = ' '.join(sens)
         match = self.regex_tagged.search(braced)
-        while (match):
+        while match:
             match = self.regex_tagged.search(braced)
             tag = match.group(2)
-            openTag = match.group(1)
-            closeTag = match.group(4)
+            open_tag = match.group(1)
+            close_tag = match.group(4)
             phrase = match.group(3)
             start = match.start(1)
             end = start + len(phrase)
-            tagIndices[tag] = (start, end, phrase)
-            braced = braced.replace(openTag, '')
-            braced = braced.replace(closeTag, '')
+            tag_index[tag] = (start, end, phrase)
+            braced = braced.replace(open_tag, '')
+            braced = braced.replace(close_tag, '')
             match = self.regex_tagged.search(braced)
-        return tagIndices
+        return tag_index
 
 
 class RlimsVerboseReader(RlimsParser):
-    def __init__(self, *args):
-        super(RlimsVerboseReader, self).__init__(*args)
-        self.hdMethod = '\tMethod='
-        self.reMethod = re.compile(r'\[(.*?)\]')
-        self.isMethod = False
-        self.reTag = re.compile(r'\{/(.*?)\}')
+    def __init__(self):
+        super(RlimsVerboseReader, self).__init__()
+        self.hd_method = '\tMethod='
+        self.regex_method = re.compile(r'\[(.*?)\]')
+        self.is_method = False
+        self.regex_tag = re.compile(r'\{/(.*?)\}')
         self.annotation = Annotation()
 
     def init_output(self):
@@ -599,8 +538,10 @@ class RlimsVerboseReader(RlimsParser):
         return output
 
     def parse_line(self, line):
-        if self.isMethod:
-            match = self.reMethod.search(line)
+        if self.is_method:
+            # Method=rule:1.4.2.1.2 (substrate) for phrase=[{NP_P_12}<pp>Ser10</pp> 
+            #  -phosphorylated <p>p27</p> and <p>p27</p>{/NP_P_12}\r20..22|<p>p27</p>]
+            match = self.regex_method.search(line)
             if match:
                 med = match.group(1)
             else:
@@ -617,7 +558,7 @@ class RlimsVerboseReader(RlimsParser):
                     return None
 
                 phrase = TextProcessor.remove_tags(subtokens[0])
-                match = self.reTag.search(subtokens[0])
+                match = self.regex_tag.search(subtokens[0])
                 if match:
                     tag = match.group(1)
                 else:
@@ -637,10 +578,9 @@ class RlimsVerboseReader(RlimsParser):
         else:
             return super(RlimsVerboseReader, self).parse_line(line)
 
-
     def process_line(self, l, res):
-        if l.startswith(self.hdMethod):
-            self.isMethod = True
+        if l.startswith(self.hd_method):
+            self.is_method = True
             tokens = self.parse_line(l)
             needle = self.mask[self.status] + '_med'
             if tokens is not None:
@@ -648,67 +588,73 @@ class RlimsVerboseReader(RlimsParser):
         elif l.startswith('\t'):
             pass
         else:
-            self.isMethod = False
+            self.is_method = False
             super(RlimsVerboseReader, self).process_line(l, res)
 
-    def toBionlp(self, res):
+    @classmethod
+    def to_ann(cls, pmid2info):
+        annotations = {}
 
-        for pmid, v in res.iteritems():
+        for doc_id, v in pmid2info.items():
+            # create new Annotation for each pmid
+            annotation = Annotation()
+
             output = v['output']
-            sens = v['sentence']
-            tagIdx = v['tag_indices']
+            sentences = v['sentence']
+            tag_index = v['tag_indices']
 
-            sens = [TextProcessor.remove_tags(s) for s in sens]
-            abstract = ' '.join(sens)
-
-            self.entities = {}
-            self.events = {}
-            self.entityIdx = 1
-            self.eventIdx = 1
+            sentences = [TextProcessor.remove_tags(s) for s in sentences]
+            abstract = ' '.join(sentences)
+            annotation.text = abstract
 
             for o in output:
-                o = self.fake_method(o, 'trigger')
-                o = self.fake_method(o, 'kinase')
-                o = self.fake_method(o, 'substrate')
-                o = self.fake_method(o, 'site')
+                o = cls.fake_method(o, 'trigger')
+                o = cls.fake_method(o, 'kinase')
+                o = cls.fake_method(o, 'substrate')
+                o = cls.fake_method(o, 'site')
 
-                tri = o['trigger']
-                triMed = o['trigger_med']
-                sub = o['substrate']
-                subMed = o['substrate_med']
+                trigger = o['trigger']
+                trigger_med = o['trigger_med']
+                kinase = o['kinase']
+                kinase_med = o['kinase_med']
+                substrate = o['substrate']
+                substrate_med = o['substrate_med']
                 site = o['site']
-                siteMed = o['site_med']
+                site_med = o['site_med']
 
-                indicesTri = self.reindex(tri, triMed, tagIdx)
-                indicesSub = self.reindex(sub, subMed, tagIdx)
-                indicesSite = self.reindex(site, siteMed, tagIdx, isSite=True)
+                index_trigger = cls.reindex(trigger, trigger_med, tag_index)
+                index_kinase = cls.reindex(kinase, kinase_med, tag_index)
+                index_substrate = cls.reindex(substrate, substrate_med, tag_index)
+                index_site = cls.reindex(site, site_med, tag_index, is_site=True)
 
-                '''
+                """
                 indicesTri = self.reindex_method(triMed,tagIdx)
                 indicesSub = self.reindex_method(subMed,tagIdx)
                 indicesSite = self.reindex_method(siteMed,tagIdx)
-                '''
+                """
 
-                if (len(indicesSub) == 0):
+                # if no substrate, continue
+                if len(index_substrate) == 0:
                     continue
 
-                triggers = self.add_entities(indicesTri, 'Phosphorylation')
-                proteins = self.add_entities(indicesSub, 'Protein')
-                sites = self.add_entities(indicesSite, 'Entity')
+                triggers = cls.add_entities(index_trigger, 'Trigger', annotation)
+                kinases = cls.add_entities(index_kinase, 'Protein', annotation)
+                substrates = cls.add_entities(index_substrate, 'Protein', annotation)
+                sites = cls.add_entities(index_site, 'Entity', annotation)
 
-                args = {'Theme': proteins, 'Site': sites}
-                self.add_events(triggers[0], args, 'Phosphorylation')
+                args = {'Kinase': kinases, 'Substrate': substrates, 'Site': sites, 'Trigger': triggers}
+                cls.add_relations(args, 'Phosphorylation', annotation)
 
-                # self.rehash_entities()
-                # self.rehash_events()
-                # ann[pmid] = {'T':self.entities,'E':self.events,'text':abstract}
+            if len(annotation.relations) > 0:
+                # only store it when it has relations
+                annotations[doc_id] = annotation
 
-        return abstract, self.annotation
+        return annotations
 
-    def fake_method(self, output, needle):
-        '''
-        add method lines if there is none
-        '''
+    @classmethod
+    def fake_method(cls, output, needle):
+        """ add method lines if there is none
+        """
         if len(output[needle + '_med']) == 0:
             sites = output[needle]
             fake = []
@@ -717,99 +663,47 @@ class RlimsVerboseReader(RlimsParser):
             output[needle + '_med'] = fake
         return output
 
-    def add_events(self, trigger, args, eventType):
-        done = False
-
-        for t in args['Theme']:
-            for s in args['Site']:
-                arg = (('Theme', t), ('Site', s))
-                done = True
-
-                if not self.annotation.has_event_prop(eventType, trigger, arg):
-                    self.annotation.add_relation(eventType, trigger, arg)
-
-                '''
-                if self.events.has_key((trigger.id,arg)):
-                    continue
-
-                eid = 'E' + str(self.eventIdx)
-                self.eventIdx += 1
-                
-                event = Event(eid,eventType,trigger.id,arg)
-                self.events[(trigger.id,arg)] = event
-                '''
-
-        if not done:
-            for t in args['Theme']:
-                arg = (('Theme', t),)
-
-                if not self.annotation.has_event_prop(eventType, trigger, arg):
-                    self.annotation.add_relation(eventType, trigger, arg)
-
-                '''
-                if self.events.has_key((trigger.id,arg)):
-                    continue
-
-                eid = 'E' + str(self.eventIdx)
-                self.eventIdx += 1
-                event = Event(eid,eventType,trigger.id,arg)
-                self.events[(trigger.id,arg)] = event
-                '''
-                done = True
-
-    def rehash_entities(self):
-        '''
-        change key from position tuple to entity index, e.g., T1
-        '''
-        entities = {}
-        for t in self.entities.values():
-            entities[t.id] = t
-        del self.entities
-        self.entities = entities
-
-    def rehash_events(self):
-        '''
-        change key from tuple to event index, e.g., E1
-        '''
-        events = {}
-        for e in self.events.values():
-            events[e.id] = e
-        del self.events
-        self.events = events
-
-    def add_entities(self, indices, entityType):
-        '''
-        create and add new entities
+    @classmethod
+    def add_entities(cls, indices, entity_category, annotation):
+        """ create and add new entities
         indices format:
         [(start,end,text),...]
-        '''
+        """
         res = []
         for i in indices:
             start = i[0]
             end = i[1]
             text = i[2]
-            if not self.annotation.has_entity_prop(entityType, start, end, text):
-                entity = self.annotation.add_entity(entityType, start, end, text)
-                self.append(entity)
-            '''
+            entity = annotation.has_entity_annotation(entity_category, start, end, text)
+            if entity is None:
+                entity = annotation.add_entity(entity_category, start, end, text)
+            res.append(entity)
+            """
             if not self.entities.has_key((start,end)):
                 tid = 'T' + str(self.entityIdx)
                 self.entityIdx += 1
                 entity = Entity(tid,entityType,start,end,text)
                 self.entities[(start,end)] = entity
             res.append(self.entities[(start,end)])
-            '''
+            """
 
         return res
 
+    @classmethod
+    def add_relations(cls, args, relation_category, annotation):
+        relation = annotation.add_relation(relation_category)
 
-    def reindex(self, annos, meds, tagIdx, isSite=False):
-        '''
-        update position index for various situations
+        for role, entities in args.items():
+            for entity in entities:
+                relation.add_argument(role, entity)
+
+    @classmethod
+    def reindex(cls, annos, meds, tag_index, is_site=False):
+        """ update position index for various situations
         1. position in method line is present
         2. position is -1
         3. the extracted span not matched with the argument
-        '''
+        """
         res = []
         for a, m in itertools.product(annos, meds):
             # check the phrase tags, they should be the same
@@ -817,115 +711,58 @@ class RlimsVerboseReader(RlimsParser):
                 continue
 
             # check the annotations, they should be the same
-            if not isSite and a[1] != m[-1][-1]:
+            if not is_site and a[1] != m[-1][-1]:
                 continue
 
-                # get information from annotation line and method line
+            # get information from annotation line and method line
             tag = a[0]
 
-            '''
-            get argument from method line, instead of annotation line
+            """ get argument from method line, instead of annotation line
             this can fix the site case
-            '''
+            """
             # argument = a[1]
 
             argument = m[-1][0]
 
             phrase = m[1]
-            inStart = m[2]
-            inEnd = m[3] + 1
-            tagStart, tagEnd, phrase = tagIdx[tag]
+            in_start = m[2]
+            in_end = m[3] + 1
+            tag_start, tag_end, phrase = tag_index[tag]
 
-            if inStart == -1:
-                '''
-                search argument in phrase if there is no position
+            if in_start == -1:
+                """ search argument in phrase if there is no position
                 information in the method line
-                '''
-                inStart = phrase.find(argument)
-                start = tagStart + inStart
+                """
+                in_start = phrase.find(argument)
+                start = tag_start + in_start
                 end = start + len(argument)
             else:
-                '''
-                recount position if there is position information
+                """ recount position if there is position information
                 in the method line
-                '''
-                inStart, inEnd = self.recount(phrase, inStart, inEnd)
-                extracted = phrase[inStart:inEnd]
+                """
+                in_start, in_end = cls.recount(phrase, in_start, in_end)
+                extracted = phrase[in_start:in_end]
                 if extracted != argument:
-                    '''
-                    search argument in the phrase if the position
+                    """ search argument in the phrase if the position
                     is not matched with the argument
-                    '''
-                    inStart = phrase.find(argument)
-                    start = tagStart + inStart
+                    """
+                    in_start = phrase.find(argument)
+                    start = tag_start + in_start
                     end = start + len(argument)
                 else:
-                    start = tagStart + inStart
-                    end = tagStart + inEnd
+                    start = tag_start + in_start
+                    end = tag_start + in_end
 
             res.append((start, end, argument))
 
         return res
 
-
-    def reindex_method(self, meds, tagIdx):
-        '''
-        update position index for various situations
-        1. position in method line is present
-        2. position is -1
-        3. the extracted span not matched with the argument
-        '''
-        res = []
-        for m in meds:
-
-            # get information from the method line
-            print(m)
-
-            tag = m[0]
-            argument = m[-1][0]
-            phrase = m[1]
-            inStart = m[2]
-            inEnd = m[3] + 1
-            tagStart, tagEnd, phrase = tagIdx[tag]
-
-            if inStart == -1:
-                '''
-                search argument in phrase if there is no position
-                information in the method line
-                '''
-                inStart = phrase.find(argument)
-                start = tagStart + inStart
-                end = start + len(argument)
-            else:
-                '''
-                recount position if there is position information
-                in the method line
-                '''
-                inStart, inEnd = self.recount(phrase, inStart, inEnd)
-                extracted = phrase[inStart:inEnd]
-                if extracted != argument:
-                    '''
-                    search argument in the phrase if the position
-                    is not matched with the argument
-                    '''
-                    inStart = phrase.find(argument)
-                    start = tagStart + inStart
-                    end = start + len(argument)
-                else:
-                    start = tagStart + inStart
-                    end = tagStart + inEnd
-
-            if (start, end, argument) not in res:
-                res.append((start, end, argument))
-
-        return res
-
-    def recount(self, text, start, end):
-        '''
-        update index based on actual string, including space
+    @classmethod
+    def recount(cls, text, start, end):
+        """ update index based on actual string, including space
         RLIMS-P verbose output file's original index excludes
         the space.
-        '''
+        """
         for i, c in enumerate(list(text)):
             if c == ' ' and i <= start:
                 start += 1
@@ -935,8 +772,8 @@ class RlimsVerboseReader(RlimsParser):
 
 
 class Rlims2Parser(Parser):
-    def __init__(self, *args):
-        super(Rlims2Parser, self).__init__(*args)
+    def __init__(self):
+        super(Rlims2Parser, self).__init__()
         self.pmid = None
         self.starter = 'date'
         self.rePMID = re.compile(r'PMID{/NP_1}.*?\{CP_2\}([0-9]*?)\{/CP_2\}')
@@ -1083,7 +920,7 @@ class Rlims2Parser(Parser):
             self.add_entity(t, entityRole)
 
     def add_entity(self, entity, entityRole):
-        if not self.entities.has_key(entity):
+        if not entity in self.entities:
             tIdx = 'T' + str(self.entityIdx)
             self.entityIdx += 1
             text = self.abstract[entity[0]:entity[1]]
@@ -1096,7 +933,7 @@ class Rlims2Parser(Parser):
             self.add_event(e, eventType)
 
     def add_event(self, event, eventType):
-        if not self.events.has_key(event):
+        if not event in self.events:
             eIdx = 'E' + str(self.eventIdx)
             self.eventIdx += 1
             entities = []
@@ -1126,7 +963,7 @@ class Rlims2Parser(Parser):
 
 
     def add_relation(self, relation, relationType):
-        if not self.relations.has_key(relation):
+        if not relation in self.relations:
             rid = 'R' + str(self.relationId)
             self.relationId += 1
             arg1 = self.entities[relation[0]]
@@ -1162,9 +999,8 @@ class Rlims2Parser(Parser):
         return (start, end)
 
     def rehash_entities(self):
-        '''
-        change key from position tuple to entity index, e.g., T1
-        '''
+        """ change key from position tuple to entity index, e.g., T1
+        """
         entities = {}
         for t in self.entities.values():
             entities[t.id] = t
@@ -1172,9 +1008,8 @@ class Rlims2Parser(Parser):
         self.entities = entities
 
     def rehash_events(self):
-        '''
-        change key from tuple to event index, e.g., E1
-        '''
+        """ change key from tuple to event index, e.g., E1
+        """
         events = {}
         for e in self.events.values():
             events[e.id] = e
@@ -1212,7 +1047,7 @@ class MedlineParser(Parser):
             if len(linetext) == 0:
                 continue
 
-            if self.mapHead.has_key(head):
+            if head in self.mapHead:
                 if self.mapHead[head] == 'previous' and needle is not None:
                     if needle == 'abstract':
                         linetext = ' ' + linetext
@@ -1228,4 +1063,3 @@ class MedlineParser(Parser):
                 needle = None
 
         return self.abstracts
-        

@@ -79,15 +79,14 @@ class Entity(object):
         return str(self)
 
     def __eq__(self, other):
-        """
-        only compare category, start, end and text,
-        but not id_?
+        """ also compare property?
         """
         if isinstance(other, self.__class__):
             return (self.category == other.category and
                     self.start == other.start and
                     self.end == other.end and
-                    self.text == other.text)
+                    self.text == other.text and
+                    self.id_ == other.id_)
         else:
             return False
 
@@ -110,8 +109,7 @@ class Relation(object):
     template = '{category}'
 
     def __init__(self, category, arguments=None, id_=None):
-        """
-        An relation structure with trigger and arguments
+        """ An relation structure with trigger and arguments
         :param category: relation type
         :type category: str
         :param arguments: a list of node objects, including the trigger if applicable
@@ -140,23 +138,25 @@ class Relation(object):
         else:
             return False
 
-    def add_argument(self, category, argument):
+    def indent_print(self):
+        print(Node('Root', self).indent_print())
+
+    def add_argument(self, role, argument):
         """
         add new argument
         :param argument: an argument is an entity or relation
         :type argument: Entity | Relation
-        :param category: semantic category, e.g., agent
-        :type category: str
+        :param role: semantic category, e.g., agent
+        :type role: str
         :return: None
         :rtype: None
         """
-        self.arguments.append(Node(category, argument))
-
+        self.arguments.append(Node(role, argument))
 
     def pack(self):
         packed = {
             'category': self.category,
-            'argument': [arg.pack for arg in self.arguments],
+            'argument_set': [arg.pack() for arg in self.arguments],
             'property': self.property
         }
         if self.id_ is not None:
@@ -217,6 +217,9 @@ class Annotation(object):
 
     def __str__(self):
         return self.template.format(len(self.entities), len(self.relations))
+
+    def __repr__(self):
+        return self.__str__()
 
     @staticmethod
     def make_argument(category, value):
@@ -345,15 +348,24 @@ class Annotation(object):
                 triggered.append(relation)
         return triggered
 
-    def has_entity(self, entity):
-        if entity in self.entities:
-            return True
-        return False
+    def has_entity_annotation(self, category, start, end, text):
+        """ check if same <category, start, end, text> entity annotation exists
+        """
+        for entity in self.entities:
+            if category == entity.category and \
+                            start == entity.start and \
+                            end == entity.end and \
+                            text == entity.text:
+                return entity
+        return None
 
-    def has_relation(self, relation):
-        if relation in self.relations:
-            return True
-        return False
+    def has_relation_annotation(self, category, arguments):
+        """ check if same <category, arguments> relation annotation exists
+        """
+        for relation in self.relations:
+            if category == relation.category and arguments == relation.arguments:
+                return relation
+        return None
 
     def remove_entity(self, entity):
         self.entities.remove(entity)
@@ -428,7 +440,7 @@ class Annotation(object):
             'text': self.text,
             'property': self.property,
             'entity_set': [entity.pack() for entity in self.entities],
-            'relation_set': [relation.pack for relation in self.relations]
+            'relation_set': [relation.pack() for relation in self.relations]
         }
         return packed
 

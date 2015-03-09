@@ -73,7 +73,7 @@ class TestNode(unittest.TestCase):
         arguments = [Node('Agent', Entity('Gene', 0, 3, 'BAD')),
                      Node('Theme', Entity('Gene', 11, 14, 'BAD')),
                      Node('Trigger', Entity('Trigger', 4, 10, 'target'))]
-        
+
         arguments = [Node('Theme', Relation('Target', arguments)),
                      Node('Trigger', Entity('Trigger', 20, 28, 'regulate'))]
 
@@ -153,7 +153,9 @@ class TestReader(unittest.TestCase):
         self.base_path = os.path.dirname(__file__)
         self.test_file = os.path.join(self.base_path, 'examples/17438130.ann')
         self.output_file = os.path.join(self.base_path, 'output/17438130.ann')
-    
+        self.rlims_file = os.path.join(self.base_path, 'examples/rlims.normal')
+        self.verbose_file = os.path.join(self.base_path, 'examples/rlims.verbose')
+
     def test_annreader(self):
         parser = AnnParser()
         annotation = parser.parse_file(self.test_file)
@@ -170,6 +172,31 @@ class TestReader(unittest.TestCase):
         annotation = parser.parse_file(self.test_file)
         print(annotation.get_entity_with_property('gid', '12345'))
 
+    def test_rlims_reader(self):
+        parser = RlimsParser()
+        annotation = parser.parse_file(self.rlims_file)
+
+    def test_rlims_verbose_reader(self):
+        parser = RlimsVerboseReader()
+        res = parser.parse_file(self.verbose_file)
+        from pprint import pprint
+        # pprint(res)
+        annotations = parser.to_ann(res)
+        for pmid, annotation in annotations.items():
+            print(pmid)
+            # for relation in annotation.relations:
+            #     relation.indent_print()
+            print(annotation)
+
+
+class TestWriter(unittest.TestCase):
+    def setUp(self):
+        self.base_path = os.path.dirname(__file__)
+        self.test_file = os.path.join(self.base_path, 'examples/17438130.ann')
+        self.output_file = os.path.join(self.base_path, 'output/17438130.ann')
+        self.rlims_file = os.path.join(self.base_path, 'examples/rlims.normal')
+
+
     def test_annwriter(self):
         parser = AnnParser()
         annotation = parser.parse_file(self.test_file)
@@ -179,17 +206,16 @@ class TestReader(unittest.TestCase):
 
 
 class TestEvaluation(unittest.TestCase):
-
     def setUp(self):
         parser = AnnParser()
         self.base_path = os.path.dirname(__file__)
         self.test_file = os.path.join(self.base_path, 'examples/17438130.ann')
         self.user_annotation = parser.parse_file(self.test_file)
         self.gold_annotation = parser.parse_file(self.test_file)
-        
+
     def test_evaluation(self):
-        Evaluation.evaluate({'17438130':self.user_annotation}, 
-                            {'17438130':self.gold_annotation}, 
+        Evaluation.evaluate({'17438130': self.user_annotation},
+                            {'17438130': self.gold_annotation},
                             entity_category=['Gene'])
 
 
