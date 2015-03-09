@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import sys
-import re
-import os
-import codecs
-import json
 import itertools
 from pprint import pprint as pp
 from .annotate import *
@@ -606,7 +601,8 @@ class RlimsVerboseReader(RlimsParser):
             sentences = [TextProcessor.remove_tags(s) for s in sentences]
             abstract = ' '.join(sentences)
             annotation.text = abstract
-
+            
+            annotation_set = set()
             for o in output:
                 o = cls.fake_method(o, 'trigger')
                 o = cls.fake_method(o, 'kinase')
@@ -621,7 +617,7 @@ class RlimsVerboseReader(RlimsParser):
                 substrate_med = o['substrate_med']
                 site = o['site']
                 site_med = o['site_med']
-
+                
                 index_trigger = cls.reindex(trigger, trigger_med, tag_index)
                 index_kinase = cls.reindex(kinase, kinase_med, tag_index)
                 index_substrate = cls.reindex(substrate, substrate_med, tag_index)
@@ -636,11 +632,20 @@ class RlimsVerboseReader(RlimsParser):
                 # if no substrate, continue
                 if len(index_substrate) == 0:
                     continue
-
+                
+                # ensure the annotation is unique
+                trigger_id = tuple(index_trigger)
+                kinase_id = tuple(index_kinase)
+                substrate_id = tuple(index_substrate)
+                site_id = tuple(index_site)
+                if (trigger_id, kinase_id, substrate_id, site_id) in annotation_set:
+                    continue
+                annotation_set.add((trigger_id, kinase_id, substrate_id, site_id))
+                    
                 triggers = cls.add_entities(index_trigger, 'Trigger', annotation)
                 kinases = cls.add_entities(index_kinase, 'Protein', annotation)
                 substrates = cls.add_entities(index_substrate, 'Protein', annotation)
-                sites = cls.add_entities(index_site, 'Entity', annotation)
+                sites = cls.add_entities(index_site, 'Site', annotation)
 
                 args = {'Kinase': kinases, 'Substrate': substrates, 'Site': sites, 'Trigger': triggers}
                 cls.add_relations(args, 'Phosphorylation', annotation)
@@ -704,29 +709,29 @@ class RlimsVerboseReader(RlimsParser):
         2. position is -1
         3. the extracted span not matched with the argument
         """
-        res = []
-        for a, m in itertools.product(annos, meds):
+        res = set()
+        for anno, med in itertools.product(annos, meds):
             # check the phrase tags, they should be the same
-            if a[0] != m[0]:
+            if anno[0] != med[0]:
                 continue
 
             # check the annotations, they should be the same
-            if not is_site and a[1] != m[-1][-1]:
+            if not is_site and anno[1] != med[-1][-1]:
                 continue
 
             # get information from annotation line and method line
-            tag = a[0]
+            tag = anno[0]
 
             """ get argument from method line, instead of annotation line
             this can fix the site case
             """
             # argument = a[1]
 
-            argument = m[-1][0]
+            argument = med[-1][0]
 
-            phrase = m[1]
-            in_start = m[2]
-            in_end = m[3] + 1
+            phrase = med[1]
+            in_start = med[2]
+            in_end = med[3] + 1
             tag_start, tag_end, phrase = tag_index[tag]
 
             if in_start == -1:
@@ -753,7 +758,7 @@ class RlimsVerboseReader(RlimsParser):
                     start = tag_start + in_start
                     end = tag_start + in_end
 
-            res.append((start, end, argument))
+            res.add((start, end, argument))
 
         return res
 

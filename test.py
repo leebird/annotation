@@ -183,10 +183,12 @@ class TestReader(unittest.TestCase):
         # pprint(res)
         annotations = parser.to_ann(res)
         for pmid, annotation in annotations.items():
+            # if pmid != '19035289':
+            #     continue
             print(pmid)
-            # for relation in annotation.relations:
-            #     relation.indent_print()
-            print(annotation)
+            for relation in annotation.relations:
+                relation.indent_print()
+            # print(annotation)
 
 
 class TestWriter(unittest.TestCase):
