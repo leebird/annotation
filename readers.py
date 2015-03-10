@@ -397,7 +397,7 @@ class RlimsParser(Parser):
                 print('unknown pmid ' + lines[0], file=sys.stderr)
                 continue
             
-            # if self.pmid != '8388736':
+            # if self.pmid != '18800763':
             #     continue
             
             res[self.pmid] = self.parse_block(lines[1:])
@@ -503,8 +503,9 @@ class RlimsParser(Parser):
         tag_index = {}
         sens = [TextProcessor.remove_bracket(s) for s in tagged_sentences]
         braced = ' '.join(sens)
-        sens = [TextProcessor.remove_tags(s) for s in tagged_sentences]
-        text = ' '.join(sens)
+        # remove_tags is too broad for bionex tags, see comments in utils.py
+        # sens = [TextProcessor.remove_tags(s) for s in tagged_sentences]
+        # text = ' '.join(sens)
         match = self.regex_tagged.search(braced)
         while match:
             # there is a potential bug here, now handled by backref in
@@ -523,7 +524,7 @@ class RlimsParser(Parser):
             braced = braced.replace(open_tag, '')
             braced = braced.replace(close_tag, '')
             match = self.regex_tagged.search(braced)
-        return tag_index, text
+        return tag_index, braced
 
 
 class RlimsVerboseReader(RlimsParser):
@@ -623,10 +624,11 @@ class RlimsVerboseReader(RlimsParser):
             sentences = v['sentence']
             tag_index = v['tag_indices']
 
-            sentences = [TextProcessor.remove_tags(s) for s in sentences]
-            abstract = ' '.join(sentences)
+            # remote_tags is too broad for bionex tags
+            # sentences = [TextProcessor.remove_tags(s) for s in sentences]
+            # abstract = ' '.join(sentences)
             # print(abstract)
-            # print(v['text'])
+            abstract = v['text']
             # import pprint
             # pprint.pprint(tag_index)
             
@@ -655,7 +657,7 @@ class RlimsVerboseReader(RlimsParser):
                 index_substrate = cls.reindex(substrate, substrate_med, tag_index)
                 index_site = cls.reindex(site, site_med, tag_index, is_site=True)
 
-                # print(site, site_med, index_site, sep="\n")
+                # print(trigger, trigger_med, index_trigger, sep="\n")
                 # print()
 
                 """

@@ -7,6 +7,8 @@ import string
 
 
 class TextProcessor(object):
+    # in text there may be {not_tag} <not_tag>
+    # may be a more strict pattern for bionex tags
     pattern_bracket = re.compile(r'<[^<>]*?>')
     pattern_brace = re.compile(r'\{[^{}]*?\}')
     pattern_open_bracket = re.compile(r'<([^<>/]*?)>')
