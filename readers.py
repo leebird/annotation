@@ -349,7 +349,7 @@ class RlimsParser(Parser):
         self.regex_amino = re.compile(r'\(\{(.*?)\}(.*?)\{/(.*?)\};')
         self.regex_site = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\};')
         self.regex_site_other = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\}\)$')
-        
+
         # tagged phrase in text
         # {VP_act_71}To gain{/VP_act_71} {NP_72}further{/NP_72}
         self.regex_tagged = re.compile(r'(\{([^\{\}]*?)\})(.*?)(\{/(\2)\})')
@@ -396,10 +396,10 @@ class RlimsParser(Parser):
                 # self.pmid = 'unknown'
                 print('unknown pmid ' + lines[0], file=sys.stderr)
                 continue
-            
+
             # if self.pmid != '6202705':
-            #     continue
-            
+            # continue
+
             res[self.pmid] = self.parse_block(lines[1:])
             sens = res[self.pmid]['sentence']
             tag_index, abstract = self.index_tag(sens)
@@ -458,27 +458,38 @@ class RlimsParser(Parser):
                 res = (tag, text)
         elif self.status == 13:
             tag = None
-            text = None
+            site = None
             amino = None
+            tag_other = None
             site_other = None
+            
+            # find site, e.g., 100
             match = self.regex_site.search(line)
             if match:
                 tag = match.group(1)
-                text = match.group(2)
-                text = TextProcessor.remove_tags(text)
+                site = match.group(2)
+                site = TextProcessor.remove_tags(site)
+            
+            # find amino, e.g., Ser
             match = self.regex_amino.search(line)
             if match:
                 amino = match.group(2)
+                
+            # find other site, e.g., domains
             match = self.regex_site_other.search(line)
             if match:
-                if text is None:
-                    text = match.group(2)
-                    text = TextProcessor.remove_tags(text)
-                if tag is None:
-                    tag = match.group(1)
-
-            if tag is not None and text is not None:
-                res = (tag, text, amino)
+                if site_other is None:
+                    site_other = match.group(2)
+                    site_other = TextProcessor.remove_tags(site_other)
+                if tag_other is None:
+                    tag_other = match.group(1)
+            
+            is_site_other = True if tag is None else False
+            tag = tag_other if tag is None else tag
+            site = site_other if site is None else site
+            
+            if tag is not None and site is not None:
+                res = (tag, site, amino, is_site_other)
 
         elif self.status == 11 or self.status == 12 \
                 or self.status == 15:
@@ -634,7 +645,7 @@ class RlimsVerboseReader(RlimsParser):
             abstract = v['text']
             # import pprint
             # pprint.pprint(tag_index)
-            
+
             annotation.text = abstract
             annotation.filepath = filepath
             annotation.doc_id = doc_id
@@ -658,8 +669,10 @@ class RlimsVerboseReader(RlimsParser):
                 index_trigger = cls.reindex(trigger, trigger_med, tag_index)
                 index_kinase = cls.reindex(kinase, kinase_med, tag_index)
                 index_substrate = cls.reindex(substrate, substrate_med, tag_index)
-                index_site = cls.reindex(site, site_med, tag_index, is_site=True)
-
+                index_site_combine = cls.reindex(site, site_med, tag_index, is_site=True)
+                index_site = [t for t in index_site_combine if not t[3]]
+                index_site_other = [t for t in index_site_combine if t[3]]
+                
                 # print(trigger, trigger_med, index_trigger, sep="\n")
                 # print()
 
@@ -678,16 +691,21 @@ class RlimsVerboseReader(RlimsParser):
                 kinase_id = tuple(index_kinase)
                 substrate_id = tuple(index_substrate)
                 site_id = tuple(index_site)
-                if (trigger_id, kinase_id, substrate_id, site_id) in annotation_set:
+                site_other_id = tuple(index_site_other)
+                if (trigger_id, kinase_id, substrate_id, site_id, site_other_id) in annotation_set:
                     continue
-                annotation_set.add((trigger_id, kinase_id, substrate_id, site_id))
+                annotation_set.add((trigger_id, kinase_id, substrate_id, site_id, site_other_id))
 
                 triggers = cls.add_entities(index_trigger, 'Trigger', annotation)
                 kinases = cls.add_entities(index_kinase, 'Protein', annotation)
                 substrates = cls.add_entities(index_substrate, 'Protein', annotation)
                 sites = cls.add_entities(index_site, 'Site', annotation)
-
-                args = {'Kinase': kinases, 'Substrate': substrates, 'Site': sites, 'Trigger': triggers}
+                sites_other = cls.add_entities(index_site_other, 'SiteOther', annotation)
+                
+                args = {'Kinase': kinases, 'Substrate': substrates, 
+                        'Site': sites, 'SiteOther':sites_other,
+                        'Trigger': triggers}
+                
                 cls.add_relations(args, 'Phosphorylation', annotation)
 
             if len(annotation.relations) > 0:
@@ -761,7 +779,10 @@ class RlimsVerboseReader(RlimsParser):
 
             # get information from annotation line and method line
             tag = anno[0]
-
+            
+            # if it's site other
+            is_site_other = anno[3] if is_site else False
+            
             """ get argument from method line, instead of annotation line
             this can fix the site case
             """
@@ -818,9 +839,12 @@ class RlimsVerboseReader(RlimsParser):
                 else:
                     start = tag_start + in_start
                     end = tag_start + in_end
-
-            res.add((start, end, argument))
-
+            
+            if is_site:
+                res.add((start, end, argument, is_site_other))
+            else:
+                res.add((start, end, argument))
+                
         return res
 
     @classmethod
