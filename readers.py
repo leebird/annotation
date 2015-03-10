@@ -134,6 +134,7 @@ class AnnParser(Parser):
 
     def parse_file(self, filepath):
         annotation = Annotation(text_sanity_check=False)
+        annotation.filepath = filepath
         f = FileProcessor.open_file(filepath)
 
         if f is None:
@@ -264,39 +265,39 @@ class SGMLParser(Parser):
 
     def parse(self, text):
         annotation = Annotation()
-        openTags = self.get_open_bracket(text)
-        closeTags = self.get_close_bracket(text)
-        tags = list(openTags) + list(closeTags)
-        orderedTags = sorted(tags, key=lambda a: a.start())
+        open_tags = self.get_open_bracket(text)
+        close_tags = self.get_close_bracket(text)
+        tags = list(open_tags) + list(close_tags)
+        ordered_tags = sorted(tags, key=lambda a: a.start())
 
-        snippets = self.get_text_snippet(text, orderedTags)
+        snippets = self.get_text_snippet(text, ordered_tags)
 
         openTagStack = []
         closeTagStack = []
 
-        for tag in orderedTags:
-            tagText = tag.group(1)
-            tagFull = tag.group(0)
-            if self.is_close(tagFull):
-                startTag = openTagStack.pop()
-                startTagText = startTag.group(1)
+        for tag in ordered_tags:
+            tag_text = tag.group(1)
+            tag_full = tag.group(0)
+            if self.is_close(tag_full):
+                start_tag = openTagStack.pop()
+                start_tag_text = start_tag.group(1)
 
                 # a tag handler to extract attrs or other stuff
                 if self.tag_handler is not None:
-                    tag_info = self.tag_handler(startTagText)
+                    tag_info = self.tag_handler(start_tag_text)
                     if 'tag' in tag_info:
-                        startTagText = tag_info['tag']
+                        start_tag_text = tag_info['tag']
 
                 """
                 open-tag and close-tag should have the same tag name
                 if not skip this pair and continue
                 if this happens, at least two entities are skip
                 """
-                if startTagText != tagText:
-                    print('different open and close tags', startTagText, tagText, file=sys.stderr)
+                if start_tag_text != tag_text:
+                    print('different open and close tags', start_tag_text, tag_text, file=sys.stderr)
                     continue
 
-                start = startTag.end()
+                start = start_tag.end()
                 end = tag.start()
                 entity_text, start, end = self.get_entity_by_index(snippets, start, end)
 
@@ -304,9 +305,9 @@ class SGMLParser(Parser):
                     category = tag_info['category']
                 else:
                     try:
-                        category = self.mapping[startTagText]
+                        category = self.mapping[start_tag_text]
                     except KeyError:
-                        category = startTagText
+                        category = start_tag_text
 
                 annotation.add_entity(category, start, end, entity_text)
             else:
@@ -348,7 +349,10 @@ class RlimsParser(Parser):
         self.regex_amino = re.compile(r'\(\{(.*?)\}(.*?)\{/(.*?)\};')
         self.regex_site = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\};')
         self.regex_site_other = re.compile(r';\{(.*?)\}(.*?)\{/(.*?)\}\)$')
-        self.regex_tagged = re.compile(r'(\{(.*?)\})(.*?)(\{/.*?\})')
+        
+        # tagged phrase in text
+        # {VP_act_71}To gain{/VP_act_71} {NP_72}further{/NP_72}
+        self.regex_tagged = re.compile(r'(\{([^\{\}]*?)\})(.*?)(\{/(\2)\})')
 
         # status used when reading rlims result files
         # e.g., there may be two substrates, but the second one won't
@@ -389,12 +393,18 @@ class RlimsParser(Parser):
             if match:
                 self.pmid = match.group(1)
             else:
-                self.pmid = 'unknown'
+                # self.pmid = 'unknown'
                 print('unknown pmid ' + lines[0], file=sys.stderr)
-
+                continue
+            
+            # if self.pmid != '8388736':
+            #     continue
+            
             res[self.pmid] = self.parse_block(lines[1:])
             sens = res[self.pmid]['sentence']
-            res[self.pmid]['tag_indices'] = self.index_tag(sens)
+            tag_index, abstract = self.index_tag(sens)
+            res[self.pmid]['tag_indices'] = tag_index
+            res[self.pmid]['text'] = abstract
 
         return res
 
@@ -485,7 +495,8 @@ class RlimsParser(Parser):
         text = f.read()
         f.close()
         blocks = self.split(text)
-        res = self._parse(blocks)
+        pmid2tuples = self._parse(blocks)
+        res = {'filepath': filepath, 'pmid2tuples': pmid2tuples}
         return res
 
     def index_tag(self, tagged_sentences):
@@ -496,6 +507,11 @@ class RlimsParser(Parser):
         text = ' '.join(sens)
         match = self.regex_tagged.search(braced)
         while match:
+            # there is a potential bug here, now handled by backref in
+            # regex_tagged. Because re.search starts from positon 0 in 
+            # each search, when there is a {not_tag} {open_tag} {close_tag} 
+            # string in text, it cound be matched as a open_tag, while the
+            # actual open_tag is contained in the phrase
             match = self.regex_tagged.search(braced)
             tag = match.group(2)
             open_tag = match.group(1)
@@ -507,7 +523,7 @@ class RlimsParser(Parser):
             braced = braced.replace(open_tag, '')
             braced = braced.replace(close_tag, '')
             match = self.regex_tagged.search(braced)
-        return tag_index
+        return tag_index, text
 
 
 class RlimsVerboseReader(RlimsParser):
@@ -536,7 +552,7 @@ class RlimsVerboseReader(RlimsParser):
     def parse_line(self, line):
         if self.is_method:
             # Method=rule:1.4.2.1.2 (substrate) for phrase=[{NP_P_12}<pp>Ser10</pp> 
-            #  -phosphorylated <p>p27</p> and <p>p27</p>{/NP_P_12}\r20..22|<p>p27</p>]
+            # -phosphorylated <p>p27</p> and <p>p27</p>{/NP_P_12}\r20..22|<p>p27</p>]
             match = self.regex_method.search(line)
             if match:
                 med = match.group(1)
@@ -593,10 +609,13 @@ class RlimsVerboseReader(RlimsParser):
             super(RlimsVerboseReader, self).process_line(l, res)
 
     @classmethod
-    def to_ann(cls, pmid2info):
+    def to_ann(cls, parsed):
         annotations = {}
 
-        for doc_id, v in pmid2info.items():
+        filepath = parsed.get('filepath')
+        pmid2tuples = parsed.get('pmid2tuples')
+        for doc_id, v in pmid2tuples.items():
+
             # create new Annotation for each pmid
             annotation = Annotation()
 
@@ -606,8 +625,15 @@ class RlimsVerboseReader(RlimsParser):
 
             sentences = [TextProcessor.remove_tags(s) for s in sentences]
             abstract = ' '.join(sentences)
-            annotation.text = abstract
+            # print(abstract)
+            # print(v['text'])
+            # import pprint
+            # pprint.pprint(tag_index)
             
+            annotation.text = abstract
+            annotation.filepath = filepath
+            annotation.doc_id = doc_id
+
             annotation_set = set()
             for o in output:
                 o = cls.fake_method(o, 'trigger')
@@ -623,11 +649,14 @@ class RlimsVerboseReader(RlimsParser):
                 substrate_med = o['substrate_med']
                 site = o['site']
                 site_med = o['site_med']
-                
+
                 index_trigger = cls.reindex(trigger, trigger_med, tag_index)
                 index_kinase = cls.reindex(kinase, kinase_med, tag_index)
                 index_substrate = cls.reindex(substrate, substrate_med, tag_index)
                 index_site = cls.reindex(site, site_med, tag_index, is_site=True)
+
+                # print(site, site_med, index_site, sep="\n")
+                # print()
 
                 """
                 indicesTri = self.reindex_method(triMed,tagIdx)
@@ -638,7 +667,7 @@ class RlimsVerboseReader(RlimsParser):
                 # if no substrate, continue
                 if len(index_substrate) == 0:
                     continue
-                
+
                 # ensure the annotation is unique
                 trigger_id = tuple(index_trigger)
                 kinase_id = tuple(index_kinase)
@@ -647,7 +676,7 @@ class RlimsVerboseReader(RlimsParser):
                 if (trigger_id, kinase_id, substrate_id, site_id) in annotation_set:
                     continue
                 annotation_set.add((trigger_id, kinase_id, substrate_id, site_id))
-                    
+
                 triggers = cls.add_entities(index_trigger, 'Trigger', annotation)
                 kinases = cls.add_entities(index_kinase, 'Protein', annotation)
                 substrates = cls.add_entities(index_substrate, 'Protein', annotation)
@@ -739,14 +768,31 @@ class RlimsVerboseReader(RlimsParser):
             in_start = med[2]
             in_end = med[3] + 1
             tag_start, tag_end, phrase = tag_index[tag]
+            start, end = -1, -1
 
             if in_start == -1:
-                """ search argument in phrase if there is no position
-                information in the method line
+                """ search argument (trigger, kinase, substrate, site in result block) 
+                in phrase (text in tag) if there is no position information 
+                in the method line and it's not site.
+                RLIMS-P normalize site so that we can simply search
+                in the phrase. E.g., the phrase may be serine-100, but
+                RLIMS-P normalized it to Ser-100
                 """
-                in_start = phrase.find(argument)
-                start = tag_start + in_start
-                end = start + len(argument)
+
+                if not is_site:
+                    in_start = phrase.find(argument)
+                    if in_start > -1:
+                        start = tag_start + in_start
+                        end = start + len(argument)
+
+                """ if it's not site or can't find the arugment, 
+                take the phrase as argument
+                """
+                if in_start == -1:
+                    start = tag_start
+                    end = tag_end
+                    argument = phrase
+
             else:
                 """ recount position if there is position information
                 in the method line
@@ -758,8 +804,12 @@ class RlimsVerboseReader(RlimsParser):
                     is not matched with the argument
                     """
                     in_start = phrase.find(argument)
-                    start = tag_start + in_start
-                    end = start + len(argument)
+                    if in_start != -1:
+                        start = tag_start + in_start
+                        end = start + len(argument)
+                    else:
+                        # we really can't find the argument
+                        continue
                 else:
                     start = tag_start + in_start
                     end = tag_start + in_end
@@ -1007,7 +1057,7 @@ class Rlims2Parser(Parser):
 
         start = base + start
         end = start + length
-        return (start, end)
+        return start, end
 
     def rehash_entities(self):
         """ change key from position tuple to entity index, e.g., T1

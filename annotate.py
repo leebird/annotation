@@ -211,6 +211,8 @@ class Annotation(object):
         self.entities = []
         self.relations = []
         self.property = {}
+        self.filepath = ''
+        self.doc_id = ''
         self.text = ''
         self.id_map = {}
         self.text_sanity_check = text_sanity_check
@@ -254,7 +256,8 @@ class Annotation(object):
         if self.text_sanity_check and sanity_check:
             if self.text[start:end] != text:
                 raise Entity.EntityIndexError(Entity.EntityIndexError.UNMATCHED_TEXT,
-                                              text + ' | ' + self.text[start:end] +
+                                              self.filepath + ' ' + self.doc_id + ' ' 
+                                              + text + ' | ' + self.text[start:end] +
                                               (' %s %s' % (start, end)))
 
         entity = Entity(category, start, end, text, id_, sanity_check)

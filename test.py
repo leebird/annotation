@@ -154,7 +154,7 @@ class TestReader(unittest.TestCase):
         self.test_file = os.path.join(self.base_path, 'examples/17438130.ann')
         self.output_file = os.path.join(self.base_path, 'output/17438130.ann')
         self.rlims_file = os.path.join(self.base_path, 'examples/rlims.normal')
-        self.verbose_file = os.path.join(self.base_path, 'examples/verbose_test')
+        self.verbose_file = os.path.join(self.base_path, 'examples/temp')
 
     def test_annreader(self):
         parser = AnnParser()
