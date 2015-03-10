@@ -383,8 +383,8 @@ class RlimsParser(Parser):
 
     def _parse(self, blocks):
         res = {}
-        for b in blocks:
-            lines = b.split('\n')
+        for block in blocks:
+            lines = block.split('\n')
             # empty line is used to seperate outputs & sentences
             if len(lines) == 0:
                 continue
@@ -397,8 +397,15 @@ class RlimsParser(Parser):
                 print('unknown pmid ' + lines[0], file=sys.stderr)
                 continue
 
-            # if self.pmid != '6202705':
-            # continue
+            # if self.pmid != '2558715':
+            #     continue
+            
+            if self.pmid == '2558715':
+                # continue
+                # temporary fix
+                # {NP_56}{NP}<p>CN</p> ( Kincaid et al.{/NP_56} , 1988 ){/NP}
+                block = block.replace('{NP}', '').replace('{/NP}', '')
+                lines = block.split('\n')
 
             res[self.pmid] = self.parse_block(lines[1:])
             sens = res[self.pmid]['sentence']
@@ -462,19 +469,19 @@ class RlimsParser(Parser):
             amino = None
             tag_other = None
             site_other = None
-            
+
             # find site, e.g., 100
             match = self.regex_site.search(line)
             if match:
                 tag = match.group(1)
                 site = match.group(2)
                 site = TextProcessor.remove_tags(site)
-            
+
             # find amino, e.g., Ser
             match = self.regex_amino.search(line)
             if match:
                 amino = match.group(2)
-                
+
             # find other site, e.g., domains
             match = self.regex_site_other.search(line)
             if match:
@@ -483,11 +490,11 @@ class RlimsParser(Parser):
                     site_other = TextProcessor.remove_tags(site_other)
                 if tag_other is None:
                     tag_other = match.group(1)
-            
+
             is_site_other = True if tag is None else False
             tag = tag_other if tag is None else tag
             site = site_other if site is None else site
-            
+
             if tag is not None and site is not None:
                 res = (tag, site, amino, is_site_other)
 
@@ -672,8 +679,8 @@ class RlimsVerboseReader(RlimsParser):
                 index_site_combine = cls.reindex(site, site_med, tag_index, is_site=True)
                 index_site = [t for t in index_site_combine if not t[3]]
                 index_site_other = [t for t in index_site_combine if t[3]]
-                
-                # print(trigger, trigger_med, index_trigger, sep="\n")
+
+                # print(substrate, substrate_med, index_substrate, sep="\n")
                 # print()
 
                 """
@@ -701,11 +708,11 @@ class RlimsVerboseReader(RlimsParser):
                 substrates = cls.add_entities(index_substrate, 'Protein', annotation)
                 sites = cls.add_entities(index_site, 'Site', annotation)
                 sites_other = cls.add_entities(index_site_other, 'SiteOther', annotation)
-                
-                args = {'Kinase': kinases, 'Substrate': substrates, 
-                        'Site': sites, 'SiteOther':sites_other,
+
+                args = {'Kinase': kinases, 'Substrate': substrates,
+                        'Site': sites, 'SiteOther': sites_other,
                         'Trigger': triggers}
-                
+
                 cls.add_relations(args, 'Phosphorylation', annotation)
 
             if len(annotation.relations) > 0:
@@ -779,10 +786,10 @@ class RlimsVerboseReader(RlimsParser):
 
             # get information from annotation line and method line
             tag = anno[0]
-            
+
             # if it's site other
             is_site_other = anno[3] if is_site else False
-            
+
             """ get argument from method line, instead of annotation line
             this can fix the site case
             """
@@ -839,12 +846,12 @@ class RlimsVerboseReader(RlimsParser):
                 else:
                     start = tag_start + in_start
                     end = tag_start + in_end
-            
+
             if is_site:
                 res.add((start, end, argument, is_site_other))
             else:
                 res.add((start, end, argument))
-                
+
         return res
 
     @classmethod
