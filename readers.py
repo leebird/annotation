@@ -384,6 +384,7 @@ class RlimsParser(Parser):
     def _parse(self, blocks):
         res = {}
         for block in blocks:
+            self.status = 0
             lines = block.split('\n')
             # empty line is used to seperate outputs & sentences
             if len(lines) == 0:
@@ -397,7 +398,7 @@ class RlimsParser(Parser):
                 print('unknown pmid ' + lines[0], file=sys.stderr)
                 continue
 
-            # if self.pmid != '2558715':
+            # if self.pmid != '963042':
             #     continue
             
             if self.pmid == '2558715':
@@ -632,7 +633,7 @@ class RlimsVerboseReader(RlimsParser):
 
     @classmethod
     def to_ann(cls, parsed):
-        annotations = {}
+        annotations = []
 
         filepath = parsed.get('filepath')
         pmid2tuples = parsed.get('pmid2tuples')
@@ -717,8 +718,8 @@ class RlimsVerboseReader(RlimsParser):
 
             if len(annotation.relations) > 0:
                 # only store it when it has relations
-                annotations[doc_id] = annotation
-
+                # annotations[doc_id] = annotation
+                annotations.append(annotation)
         return annotations
 
     @classmethod

@@ -440,6 +440,7 @@ class Annotation(object):
 
     def pack(self):
         packed = {
+            'doc_id': self.doc_id,
             'text': self.text,
             'property': self.property,
             'entity_set': [entity.pack() for entity in self.entities],
