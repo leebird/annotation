@@ -880,16 +880,17 @@ class MedlineParser(Parser):
 
     def __init__(self):
         super(MedlineParser, self).__init__()
-        self.abstracts = {}
 
-    def parse(self, text):
+    @classmethod
+    def parse(cls, text):
         lines = text.strip().split('\n')
-        return self.iterparse(lines)
+        return cls.iterparse(lines)
 
-    def iterparse(self, iterator):
+    @classmethod
+    def iterparse(cls, iterator):
         currpmid = None
         needle = None
-        self.abstracts = {}
+        abstracts = {}
         for line in iterator:
             line = line.rstrip()
             if len(line) == 0:
@@ -900,19 +901,19 @@ class MedlineParser(Parser):
             if len(linetext) == 0:
                 continue
 
-            if head in self.mapHead:
-                if self.mapHead[head] == 'previous' and needle is not None:
+            if head in cls.mapHead:
+                if cls.mapHead[head] == 'previous' and needle is not None:
                     if needle == 'abstract':
                         linetext = ' ' + linetext
-                    self.abstracts[currpmid][needle] += linetext
+                    abstracts[currpmid][needle] += linetext
                 else:
-                    needle = self.mapHead[head]
+                    needle = cls.mapHead[head]
                     if needle == 'pmid':
                         currpmid = linetext
-                        self.abstracts[currpmid] = {}
+                        abstracts[currpmid] = {}
                     else:
-                        self.abstracts[currpmid][needle] = linetext
+                        abstracts[currpmid][needle] = linetext
             else:
                 needle = None
 
-        return self.abstracts
+        return abstracts
