@@ -903,7 +903,7 @@ class MedlineParser(Parser):
 
             if head in cls.mapHead:
                 if cls.mapHead[head] == 'previous' and needle is not None:
-                    if needle == 'abstract':
+                    if needle == 'abstract' or needle == 'title':
                         linetext = ' ' + linetext
                     abstracts[currpmid][needle] += linetext
                 else:
