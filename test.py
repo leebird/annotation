@@ -154,7 +154,7 @@ class TestReader(unittest.TestCase):
         self.test_file = os.path.join(self.base_path, 'examples/17438130.ann')
         self.output_file = os.path.join(self.base_path, 'output/17438130.ann')
         self.rlims_file = os.path.join(self.base_path, 'examples/rlims.normal')
-        self.verbose_file = os.path.join(self.base_path, 'examples/1_20_aaaaa.verbose')
+        self.verbose_file = os.path.join(self.base_path, 'examples/rlims.verbose')
 
     def test_annreader(self):
         parser = AnnParser()
@@ -182,7 +182,8 @@ class TestReader(unittest.TestCase):
         from pprint import pprint
         # pprint(res)
         annotations = parser.to_ann(res)
-        print(len(annotations), annotations.get('956179'))
+        print(annotations[0].dumps())
+        # print(len(annotations), annotations.get('956179'))
         '''
         for pmid, annotation in annotations.items():
             # if pmid != '19035289':

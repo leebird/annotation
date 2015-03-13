@@ -448,8 +448,7 @@ class Annotation(object):
         }
         return packed
 
-    @classmethod
-    def dumps(cls, annotation, format='json'):
+    def dumps(self, format='json'):
         """ dump annotation into json object
         :param annotation: the annotation to be dumped
         :type annotation: Annotation
@@ -459,7 +458,7 @@ class Annotation(object):
         :rtype: str
         """
         if format == 'json':
-            return json.dumps(annotation.pack())
+            return json.dumps(self.pack())
 
     @classmethod
     def loads(cls, data, format='json'):
