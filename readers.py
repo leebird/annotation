@@ -673,14 +673,14 @@ class RlimsVerboseReader(RlimsParser):
                 substrate_med = o['substrate_med']
                 site = o['site']
                 site_med = o['site_med']
-
+                
                 index_trigger = cls.reindex(trigger, trigger_med, tag_index)
                 index_kinase = cls.reindex(kinase, kinase_med, tag_index)
                 index_substrate = cls.reindex(substrate, substrate_med, tag_index)
+                # get Site and SiteOther combined
                 index_site_combine = cls.reindex(site, site_med, tag_index, is_site=True)
                 index_site = [t for t in index_site_combine if not t[3]]
                 index_site_other = [t for t in index_site_combine if t[3]]
-
                 # print(substrate, substrate_med, index_substrate, sep="\n")
                 # print()
 
@@ -709,7 +709,6 @@ class RlimsVerboseReader(RlimsParser):
                 substrates = cls.add_entities(index_substrate, 'Protein', annotation)
                 sites = cls.add_entities(index_site, 'Site', annotation)
                 sites_other = cls.add_entities(index_site_other, 'SiteOther', annotation)
-
                 args = {'Kinase': kinases, 'Substrate': substrates,
                         'Site': sites, 'SiteOther': sites_other,
                         'Trigger': triggers}
@@ -720,6 +719,8 @@ class RlimsVerboseReader(RlimsParser):
                 # only store it when it has relations
                 # annotations[doc_id] = annotation
                 annotations.append(annotation)
+            if doc_id == '19001501':
+                print(annotation.pack())
         return annotations
 
     @classmethod
@@ -748,15 +749,15 @@ class RlimsVerboseReader(RlimsParser):
             entity = annotation.has_entity_annotation(entity_category, start, end, text)
             if entity is None:
                 entity = annotation.add_entity(entity_category, start, end, text)
+                # add standardized amino acid and position if it's a Site
+                if entity_category == 'Site':
+                    amino_acid = i[4]
+                    position = i[5]
+                    if amino_acid is not None:
+                        entity.property['amino_acid'] = amino_acid
+                        if position is not None:
+                            entity.property['position'] = position
             res.append(entity)
-            """
-            if not self.entities.has_key((start,end)):
-                tid = 'T' + str(self.entityIdx)
-                self.entityIdx += 1
-                entity = Entity(tid,entityType,start,end,text)
-                self.entities[(start,end)] = entity
-            res.append(self.entities[(start,end)])
-            """
 
         return res
 
@@ -788,14 +789,14 @@ class RlimsVerboseReader(RlimsParser):
             # get information from annotation line and method line
             tag = anno[0]
 
-            # if it's site other
+            # if it's SiteOther, anno[3] is boolean, True for
+            # it's SiteOther
             is_site_other = anno[3] if is_site else False
 
             """ get argument from method line, instead of annotation line
             this can fix the site case
             """
             # argument = a[1]
-
             argument = med[-1][0]
 
             phrase = med[1]
@@ -849,7 +850,9 @@ class RlimsVerboseReader(RlimsParser):
                     end = tag_start + in_end
 
             if is_site:
-                res.add((start, end, argument, is_site_other))
+                # return with is_site_other (boolean), amino acid (e.g., Ser), 
+                # and position (e.g., 718)
+                res.add((start, end, argument, is_site_other, anno[1], anno[2]))
             else:
                 res.add((start, end, argument))
 
