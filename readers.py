@@ -719,8 +719,6 @@ class RlimsVerboseReader(RlimsParser):
                 # only store it when it has relations
                 # annotations[doc_id] = annotation
                 annotations.append(annotation)
-            if doc_id == '19001501':
-                print(annotation.pack())
         return annotations
 
     @classmethod

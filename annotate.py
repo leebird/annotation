@@ -469,8 +469,9 @@ class Annotation(object):
             packed = json.loads(data)
             annotation.text = packed.get('text')
             annotation.property = packed.get('property')
-            entities = packed.get('entities')
-            relations = packed.get('relations')
+            annotation.doc_id = packed.get('doc_id')
+            entities = packed.get('entity_set')
+            relations = packed.get('relation_set')
 
             for entity in entities:
                 sanity_check = entity.get('property').get('sanity_check')
@@ -494,7 +495,7 @@ class Annotation(object):
                 rel.property = property
 
             for relation in relations:
-                arguments = relation.get('argument')
+                arguments = relation.get('argument_set')
                 id_ = relation.get('id')
                 rel = annotation.id_map.get(id_)
 
