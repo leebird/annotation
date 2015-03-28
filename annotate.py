@@ -474,17 +474,19 @@ class Annotation(object):
             relations = packed.get('relation_set')
 
             for entity in entities:
-                sanity_check = entity.get('property').get('sanity_check')
+                property = entity.get('property')
+                sanity_check = property.get('sanity_check')
                 category = entity.get('category')
                 start = entity.get('start')
                 end = entity.get('end')
                 text = entity.get('text')
                 id_ = entity.get('id')
-
+                
                 if sanity_check:
                     ent = annotation.add_entity(category, start, end, text, id_)
                 else:
                     ent = annotation.add_entity(category, start, end, text, id_, False)
+                ent.property = property
 
             for relation in relations:
                 category = relation.get('category')
