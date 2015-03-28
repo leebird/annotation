@@ -354,6 +354,9 @@ class RlimsParser(Parser):
         # {VP_act_71}To gain{/VP_act_71} {NP_72}further{/NP_72}
         self.regex_tagged = re.compile(r'(\{([^\{\}]*?)\})(.*?)(\{/(\2)\})')
 
+        # used to match numbers in the site
+        self.regex_number = re.compile(r'[0-9]+')
+        
         # status used when reading rlims result files
         # e.g., there may be two substrates, but the second one won't
         # start with hd_substrate
@@ -683,7 +686,6 @@ class RlimsVerboseReader(RlimsParser):
                 index_site_other = [t for t in index_site_combine if t[3]]
                 # print(substrate, substrate_med, index_substrate, sep="\n")
                 # print()
-
                 """
                 indicesTri = self.reindex_method(triMed,tagIdx)
                 indicesSub = self.reindex_method(subMed,tagIdx)
@@ -774,8 +776,13 @@ class RlimsVerboseReader(RlimsParser):
         2. position is -1
         3. the extracted span not matched with the argument
         """
+        regex_number = re.compile(r'[0-9]+')
         res = set()
         for anno, med in itertools.product(annos, meds):
+            # we use product here since annos and meds are not 
+            # 1-to-1 matched, the following three ifs are used
+            # to filter out unmatched pair of <anno, med>
+            
             # check the phrase tags, they should be the same
             if anno[0] != med[0]:
                 continue
@@ -783,7 +790,21 @@ class RlimsVerboseReader(RlimsParser):
             # check the annotations, they should be the same
             if not is_site and anno[1] != med[-1][-1]:
                 continue
-
+                
+            # check site position, since two sites can be extracted
+            # from the same NP. Only checking tag is not enough
+            if is_site and anno[2] is not None:
+                position_match = False
+                for text in med[-1]:
+                    # med[-1] contains text snippets based on offset 
+                    # in the phrase
+                    numbers = regex_number.findall(text)
+                    if anno[2] in numbers:
+                        position_match = True
+                
+                if not position_match:
+                    continue
+            
             # get information from annotation line and method line
             tag = anno[0]
 
