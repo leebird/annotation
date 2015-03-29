@@ -356,7 +356,7 @@ class RlimsParser(Parser):
 
         # used to match numbers in the site
         self.regex_number = re.compile(r'[0-9]+')
-        
+
         # status used when reading rlims result files
         # e.g., there may be two substrates, but the second one won't
         # start with hd_substrate
@@ -402,8 +402,8 @@ class RlimsParser(Parser):
                 continue
 
             # if self.pmid != '963042':
-            #     continue
-            
+            # continue
+
             if self.pmid == '2558715':
                 # continue
                 # temporary fix
@@ -676,7 +676,7 @@ class RlimsVerboseReader(RlimsParser):
                 substrate_med = o['substrate_med']
                 site = o['site']
                 site_med = o['site_med']
-                
+
                 index_trigger = cls.reindex(trigger, trigger_med, tag_index)
                 index_kinase = cls.reindex(kinase, kinase_med, tag_index)
                 index_substrate = cls.reindex(substrate, substrate_med, tag_index)
@@ -684,6 +684,7 @@ class RlimsVerboseReader(RlimsParser):
                 index_site_combine = cls.reindex(site, site_med, tag_index, is_site=True)
                 index_site = [t for t in index_site_combine if not t[3]]
                 index_site_other = [t for t in index_site_combine if t[3]]
+                # print(index_site)
                 # print(substrate, substrate_med, index_substrate, sep="\n")
                 # print()
                 """
@@ -720,9 +721,44 @@ class RlimsVerboseReader(RlimsParser):
             if len(annotation.relations) > 0:
                 # only store it when it has relations
                 # annotations[doc_id] = annotation
+                cls.fix_std_site(annotation)
                 annotations.append(annotation)
         return annotations
 
+    @classmethod
+    def fix_std_site(cls, annotation):
+        # when using method line to extracted the position of a site,
+        # we may match the wrong annotation with the method line.
+        # e.g., 10026262. In reindex(), the second site annotation line
+        # can match both method lines, resulting in the site "serine 6"
+        # has two std_site property, "Ser-6" and "Ser". Here we remove all the
+        # duplicate std_site before we save all the annotation.
+        """
+        Site = (-;{NP_PP_63}Ser{/NP_PP_63};UNK)
+        ({NP_PP_63}6{/NP_PP_63};{NP_PP_63}Ser{/NP_PP_63};UNK)
+            Method=rule: (site) for phrase=[{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}
+        7..12|serine|Ser
+        21..27|serine 6|Ser6]
+        """
+        sites = [e for e in annotation.entities if e.category == 'Site']
+        for site in sites:
+            has_position = set()
+            std_sites = site.property.get('std_site')
+            if std_sites is None:
+                continue
+            for std_site in std_sites:
+                if len(std_site) > 3:
+                    # this should work for any site with the for XXX-000, 
+                    # including phosphorylation site, or other PTM site
+                    has_position.add(std_site[:3])
+            for amino_acid in has_position:
+                try:
+                    std_sites.remove(amino_acid)
+                except KeyError:
+                    continue
+            # change set to list for json serialization
+            site.property['std_site'] = list(std_sites)
+                    
     @classmethod
     def fake_method(cls, output, needle):
         """ add method lines if there is none
@@ -749,14 +785,23 @@ class RlimsVerboseReader(RlimsParser):
             entity = annotation.has_entity_annotation(entity_category, start, end, text)
             if entity is None:
                 entity = annotation.add_entity(entity_category, start, end, text)
+
+            if entity_category == 'Site':
                 # add standardized amino acid and position if it's a Site
-                if entity_category == 'Site':
-                    amino_acid = i[4]
-                    position = i[5]
-                    if amino_acid is not None:
-                        entity.property['amino_acid'] = amino_acid
-                        if position is not None:
-                            entity.property['position'] = position
+                amino_acid = i[4]
+                position = i[5]
+                if amino_acid is not None and position is not None:
+                    site = amino_acid + '-' + position
+                elif amino_acid is not None:
+                    site = amino_acid
+                else:
+                    continue
+                existed_site = entity.property.get('std_site')
+                if existed_site is None:
+                    entity.property['std_site'] = {site}
+                else:
+                    entity.property['std_site'].add(site)
+
             res.append(entity)
 
         return res
@@ -782,7 +827,7 @@ class RlimsVerboseReader(RlimsParser):
             # we use product here since annos and meds are not 
             # 1-to-1 matched, the following three ifs are used
             # to filter out unmatched pair of <anno, med>
-            
+
             # check the phrase tags, they should be the same
             if anno[0] != med[0]:
                 continue
@@ -790,7 +835,7 @@ class RlimsVerboseReader(RlimsParser):
             # check the annotations, they should be the same
             if not is_site and anno[1] != med[-1][-1]:
                 continue
-                
+
             # check site position, since two sites can be extracted
             # from the same NP. Only checking tag is not enough
             if is_site and anno[2] is not None:
@@ -801,10 +846,10 @@ class RlimsVerboseReader(RlimsParser):
                     numbers = regex_number.findall(text)
                     if anno[2] in numbers:
                         position_match = True
-                
+
                 if not position_match:
                     continue
-            
+
             # get information from annotation line and method line
             tag = anno[0]
 

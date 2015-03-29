@@ -1,85 +1,148 @@
-{NP_1}PMID{/NP_1} - {CP_2}10022904{/CP_2}
-
-{NP_3}TI{/NP_3} - {NP_4}Activation{/NP_4} of {NP_P_5}<p>IkappaB kinase beta</p>{/NP_P_5} by {NP_P_6}<p>protein kinase C isoforms</p>{/NP_P_6} .
-
-{NP_7}AB{/NP_7} - {NP_P_8}The atypical <p>protein kinase C ( PKC ) isotypes</p> ( <p>lambda/iotaPKC</p> and <p>zetaPKC</p> ){/NP_P_8} {VP_pass_9}have been shown{/VP_pass_9} {VP_pass_10}to be critically involved{/VP_pass_10} in {NP_11}important <Bpcl>cell</Bpcl> functions{/NP_11} {JP_12}such{/JP_12} as {NP_13}proliferation and survival{/NP_13} .
+{NP_1}PMID{/NP_1} - {CP_2}10026262{/CP_2}
 
 OUTPUT 0
-PTM = ({NP_26};phosphorylation)
+PTM = ({NP_PP_4};phosphorylation)
+Inducer = (-;-)
+Kinase = ({NP_PP_4}<p>DNA -dependent protein kinase</p>{/NP_PP_4};-)
+	Method=rule:1.2.1.1.1|1.2.51.1.1.4:0.5 (kinase) for phrase=[{NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4}0..25|<p>DNA -dependent protein kinase</p>]
+Substrate = ({NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5};-)
+	Method=rule:1.2.1.1.0.1 (substrate) for phrase=[{NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5}]
+Site = (-;-;{NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4})
+(-;-;{NP_P_5} 70{/NP_P_5})
+	Method=rule:1.2.1.1.0.1 (site) for phrase=[{NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5}2..3| 70|]
+	Method=rule: (siteother) for phrase=[{NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4}]
+
+{NP_3}TI{/NP_3} - {NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4} in {NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5} .
+
+{NP_6}AB{/NP_6} - {NP_B_7}<B><p>Ku</p> antigen</B>{/NP_B_7} {VP_pass_8}is composed{/VP_pass_8} of {CP_9}70{/CP_9} and {NP_P_10}<p>82 kDa subunits</p>{/NP_P_10} ( {NP_P_11}<p>Ku70</p> and <p>Ku80</p>{/NP_P_11} , {AV_12}respectively{/AV_12} ) {NP_13}that{/NP_13} {VP_act_14}together bind{/VP_act_14} with {NP_15}high affinity{/NP_15} to {NP_16}ends{/NP_16} of {NP_17}double-stranded DNA{/NP_17} and {NP_B_18}other <B>DNA structures</B>{/NP_B_18} in {NP_19}vitro{/NP_19} .
+
+When {VP_act_20}bound{/VP_act_20} to {NP_21}DNA{/NP_21} , {NP_P_22}the <Bppf><p>Ku 70/80</p> heterodimer</Bppf>{/NP_P_22} {VP_act_23}enhances{/VP_act_23} {NP_24}the <Bppf>kinase</Bppf> activity{/NP_24} of {NP_P_25}the catalytic <Bppf>subunit</Bppf>{/NP_P_25} of {NP_P_26}the <p>DNA -dependent protein kinase</p>{/NP_P_26} , {NP_P_27}<p>DNA-PKcs</p>{/NP_P_27} .
+
+{NP_P_28}<p>Ku</p> and <p>DNA-PKcs</p>{/NP_P_28} {VP_pass_29}are required{/VP_pass_29} for {NP_30}<B>V(D) J</B> recombination and DNA double{/NP_30} - {NP_31}<Bppp>strand</Bppp> break repair{/NP_31} in {NP_32}vivo{/NP_32} and {VP_act_33}may also play{/VP_act_33} {NP_34}a role{/NP_34} in {NP_35}regulation{/NP_35} of {NP_36}transcription{/NP_36} .
+
+OUTPUT 1
+PTM = ({VP_pass_38};phosphorylated)
+Inducer = (-;-)
+Kinase = ({NP_P_39}<p>DNA-PKcs</p>{/NP_P_39};-)
+	Method=rule:1.13.1.1 (kinase) for phrase=[{NP_P_39}<p>DNA-PKcs</p>{/NP_P_39}]
+Substrate = ({NP_P_37}<p>Ku</p>{/NP_P_37};-)
+	Method=rule:1.3.1.1.0.1 (substrate) for phrase=[{NP_P_37}<p>Ku</p>{/NP_P_37}]
+Site = (-;-;UNK)
+
+OUTPUT 2
+PTM = ({NP_46};phosphorylation)
+	HasAgentTheme="<p>Ku</p>" in "{NP_46}<p>Ku</p> phosphorylation{/NP_46}"
+Inducer = (-;-)
+Kinase = ({NP_P_44}<p>DNA-PKcs</p>{/NP_P_44};-)
+	Method=from_other_triggers_in_the_same_sentence (kinase) for phrase=[{NP_P_39}<p>DNA-PKcs</p>{/NP_P_39}]
+	Method=closer (kinase) for phrase=[{NP_P_44}<p>DNA-PKcs</p>{/NP_P_44}]
+		From: {NP_P_39}<p>DNA-PKcs</p>{/NP_P_39}
+Substrate = ({NP_46}<p>Ku</p>{/NP_46};-)
+	Method=agent_or_theme_but_known_as_substrate (substrate) for phrase=[{NP_46}<p>Ku</p> phosphorylation{/NP_46}0..1|<p>Ku</p>]
+Site = (-;-;UNK)
+
+{NP_P_37}<p>Ku</p>{/NP_P_37} {VP_pass_38}is phosphorylated{/VP_pass_38} by {NP_P_39}<p>DNA-PKcs</p>{/NP_P_39} in {NP_40}vitro{/NP_40} , and {NP_41}<Bpcl>cells</Bpcl>{/NP_41} {NP_42}that{/NP_42} {VP_act_43}lack{/VP_act_43} {NP_P_44}<p>DNA-PKcs</p>{/NP_P_44} {VP_pass_45}are deficient{/VP_pass_45} in {NP_46}<p>Ku</p> phosphorylation{/NP_46} in {NP_47}vitro{/NP_47} , {VP_act_48}suggesting{/VP_act_48} that {NP_P_49}<p>Ku</p>{/NP_P_49} {VP_act_50}may be{/VP_act_50} {NP_51}a physiological target{/NP_51} for {NP_P_52}<p>DNA-PK</p>{/NP_P_52} .
+
+OUTPUT 3
+PTM = ({NP_57};phosphorylation)
+	HasAgentTheme="<p>DNA-PK</p>" in "{NP_57}<p>DNA-PK</p> phosphorylation{/NP_57}"
+Inducer = (-;-)
+Kinase = ({NP_57}<p>DNA-PK</p>{/NP_57};-)
+	Method=rule:1.2.1.1.1 (kinase) for phrase=[{NP_57}<p>DNA-PK</p> phosphorylation{/NP_57}0..5|<p>DNA-PK</p>]
+Substrate = ({NP_P_58}<s>human</s> <p>Ku protein</p>{/NP_P_58};-)
+	Method=rule:1.2.1.1.0.1 (substrate) for phrase=[{NP_P_58}<s>human</s> <p>Ku protein</p>{/NP_P_58}]
+Site = (-;-;{NP_PP_56}<Bppp>sites</Bppp>{/NP_PP_56})
+	Method=rule: (siteother) for phrase=[{NP_PP_56}the <Bppp>sites</Bppp>{/NP_PP_56}3..7|<Bppp>sites</Bppp>]
+
+{AV_53}Here{/AV_53} {NP_54}we{/NP_54} {VP_act_55}have identified{/VP_act_55} {NP_PP_56}the <Bppp>sites</Bppp>{/NP_PP_56} of {NP_57}<p>DNA-PK</p> phosphorylation{/NP_57} in {NP_P_58}<s>human</s> <p>Ku protein</p>{/NP_P_58} .
+
+OUTPUT 4
+PTM = ({VP_pass_62};phosphorylated)
 Inducer = (-;-)
 Kinase = (-;-)
 	Candidates (Kinase):
-		Candidate="{NP_P_16}the atypical <p>PKCs</p>{/NP_P_16}" 	(Features:dist=0|subject_subnc)
-		Candidate="<p>PKCs</p>" in "{NP_P_16}the atypical <p>PKCs</p>{/NP_P_16}" 	(Features:dist=0|subject_subnc|subject_subnc_modifier)
-		Candidate="{NP_P_18}<p>tumor necrosis factor alpha ( TNF-alpha )</p>{/NP_P_18}" 	(Features:dist=0)
-		Candidate="{NP_P_21}<p>NF-kappaB</p>{/NP_P_21}" 	(Features:dist=0|pparg)
-		Candidate="<p>cytokine</p>" in "{NP_P_22}this <p>cytokine</p>{/NP_P_22}" 	(Features:dist=0)
-Substrate = ({NP_P_27}<p>IkappaB</p>{/NP_P_27};-)
-	Method=rule:1.2.1.1.0.1 (substrate) for phrase=[{NP_P_27}<p>IkappaB</p>{/NP_P_27}]
-Site = (-;-;UNK)
-
-{NP_14}Previous studies{/NP_14} {VP_act_15}have demonstrated{/VP_act_15} that {NP_P_16}the atypical <p>PKCs</p>{/NP_P_16} {VP_pass_17}are stimulated{/VP_pass_17} by {NP_P_18}<p>tumor necrosis factor alpha ( TNF-alpha )</p>{/NP_P_18} and {VP_pass_19}are required{/VP_pass_19} for {NP_20}the activation{/NP_20} of {NP_P_21}<p>NF-kappaB</p>{/NP_P_21} by {NP_P_22}this <p>cytokine</p>{/NP_P_22} through {NP_23}a mechanism{/NP_23} {NP_24}that{/NP_24} {VP_act_25}most probably involves{/VP_act_25} {NP_26}the phosphorylation{/NP_26} of {NP_P_27}<p>IkappaB</p>{/NP_P_27} .
-
-OUTPUT 1
-PTM = ({VP_act_30};phosphorylate)
-Inducer = (-;-)
-Kinase = ({NP_P_29}<p>PKC isotypes</p>{/NP_P_29};-)
-	Method=link (kinase) for phrase=[{NP_P_16}the atypical <p>PKCs</p>{/NP_P_16}]
-		From: {NP_P_29}these <p>PKC isotypes</p>{/NP_P_29}
-		Path: refer
-	Method=rule: (kinase) for phrase=[{NP_P_29}these <p>PKC isotypes</p>{/NP_P_29}5..15|<p>PKC isotypes</p>]
-Substrate = ({NP_P_31}<p>IkappaB</p>{/NP_P_31};-)
-	Method=rule:1.1.1.1 (substrate) for phrase=[{NP_P_31}<p>IkappaB</p>{/NP_P_31}]
-Site = (-;-;UNK)
-
-{NP_28}The inability{/NP_28} of {NP_P_29}these <p>PKC isotypes</p>{/NP_P_29} {VP_act_30}to directly phosphorylate{/VP_act_30} {NP_P_31}<p>IkappaB</p>{/NP_P_31} {VP_act_32}led{/VP_act_32} to {NP_33}the hypothesis{/NP_33} {NP_P_34}that <p>zetaPKC</p>{/NP_P_34} {VP_act_35}may use{/VP_act_35} {NP_P_36}a putative <p>IkappaB kinase</p>{/NP_P_36} {VP_act_37}to functionally inactivate{/VP_act_37} {NP_P_38}<p>IkappaB</p>{/NP_P_38} .
-
-OUTPUT 2
-PTM = ({VP_act_43};phosphorylate)
-Inducer = (-;-)
-Kinase = ({NP_P_41}<p>IKKalpha</p>{/NP_P_41};-)
-({NP_P_41}<p>IKKbeta</p>{/NP_P_41};-)
-({NP_P_41}<p>IkappaB kinases</p>{/NP_P_41};-)
-	Method=link (kinase) for phrase=[{NP_P_41}two <p>IkappaB kinases</p> ( <p>IKKalpha</p> and <p>IKKbeta</p> ){/NP_P_41}]
-		From: {NP_42}which{/NP_42}
-		Path: refer
-Substrate = ({NP_P_45}<p>IkappaB molecule</p>{/NP_P_45};-)
-	Method=link (substrate) for phrase=[{NP_P_45}the <p>IkappaB molecule</p>{/NP_P_45}3..17|<p>IkappaB molecule</p>]
-		From: {NP_PP_44}the <Bppp>residues</Bppp>{/NP_PP_44}
+		Candidate="{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
+		Candidate="serine|serine 6" in "{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
+		Candidate="{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
+		Candidate="serines 577 and 580" in "{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
+		Candidate="{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
+		Candidate="threonine 715" in "{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
+		Candidate="<pp>transcriptional activation domain</pp>" in "{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}" 	(Features:dist=0)
+		Candidate="<p>Ku80</p>" in "{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}" 	(Features:dist=0|is-substrate_elsewhere)
+Substrate = ({NP_P_61}<p>Ku70</p>{/NP_P_61};-)
+	Method=link (substrate) for phrase=[{NP_P_61}<p>Ku70</p>{/NP_P_61}]
+		From: {NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}
 		Path: whole
-Site = (-;-;{NP_PP_44}<Bppp>residues</Bppp>{/NP_PP_44})
-	Method=rule: (siteother) for phrase=[{NP_PP_44}the <Bppp>residues</Bppp>{/NP_PP_44}3..10|<Bppp>residues</Bppp>]
+	Method=rule:1.3.1.1.0.1 (substrate) for phrase=[{NP_P_61}<p>Ku70</p>{/NP_P_61}]
+Site = (-;{NP_PP_63}Ser{/NP_PP_63};UNK)
+({NP_PP_63}6{/NP_PP_63};{NP_PP_63}Ser{/NP_PP_63};UNK)
+	Method=rule: (site) for phrase=[{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}7..12|serine|Ser21..27|serine 6|Ser6]
 
-{NP_39}Recently several <Bpcf>groups</Bpcf>{/NP_39} {VP_act_40}have molecularly characterized and cloned{/VP_act_40} {NP_P_41}two <p>IkappaB kinases</p> ( <p>IKKalpha</p> and <p>IKKbeta</p> ){/NP_P_41} {NP_42}which{/NP_42} {VP_act_43}phosphorylate{/VP_act_43} {NP_PP_44}the <Bppp>residues</Bppp>{/NP_PP_44} in {NP_P_45}the <p>IkappaB molecule</p>{/NP_P_45} {NP_46}that{/NP_46} {VP_act_47}serve{/VP_act_47} {VP_act_48}to target{/VP_act_48} {NP_49}it{/NP_49} for {NP_50}ubiquitination and degradation{/NP_50} .
-
-In {NP_51}this study{/NP_51} {NP_52}we{/NP_52} {VP_act_53}have addressed{/VP_act_53} {NP_54}the possibility{/NP_54} that {NP_P_55}different <p>PKCs</p>{/NP_P_55} {VP_act_56}may control{/VP_act_56} {NP_P_57}<p>NF-kappaB</p>{/NP_P_57} through {NP_58}the activation{/NP_58} of {NP_P_59}the <p>IKKs</p>{/NP_P_59} .
-
-{NP_60}We{/NP_60} {VP_act_61}report{/VP_act_61} {AV_62}here{/AV_62} that {NP_P_63}<p>alphaPKC</p>{/NP_P_63} as well as {NP_P_64}the atypical <p>PKCs</p>{/NP_P_64} {VP_act_65}bind{/VP_act_65} {NP_66}to{/NP_66} {NP_P_67}the <p>IKKs</p>{/NP_P_67} in {NP_68}vitro and in vivo{/NP_68} .
-
-In {NP_69}addition{/NP_69} , {NP_70}overexpression{/NP_70} of {NP_P_71}<p>zetaPKC</p>{/NP_P_71} {VP_act_72}positively modulates{/VP_act_72} {NP_73}<p>IKKbeta</p> activity{/NP_73} but {AV_74}not{/AV_74} that of {NP_P_75}<p>IKKalpha</p>{/NP_P_75} , whereas {NP_76}the transfection{/NP_76} of {NP_P_77}a <p>zetaPKC dominant</p> negative <Bppf>mutant</Bppf>{/NP_P_77} {VP_act_78}severely impairs{/VP_act_78} {NP_79}the activation{/NP_79} of {NP_P_80}<p>IKKbeta</p>{/NP_P_80} but not {NP_P_81}<p>IKKalpha</p>{/NP_P_81} in {NP_82}<p>TNF-alpha</p> -stimulated <Bpcl>cells</Bpcl>{/NP_82} .
-
-{NP_83}We{/NP_83} {VP_act_84}also show{/VP_act_84} that {NP_85}<Bpcl>cell</Bpcl> stimulation{/NP_85} with {NP_C_86}<c>phorbol 12-myristate 13-acetate</c>{/NP_C_86} {VP_act_87}activates{/VP_act_87} {NP_P_88}<p>IKKbeta</p>{/NP_P_88} , {NP_89}which{/NP_89} {VP_pass_90}is entirely dependent{/VP_pass_90} on {NP_91}the activity{/NP_91} of {NP_P_92}<p>alphaPKC</p>{/NP_P_92} but {AV_93}not{/AV_93} that of {NP_P_94}the atypical <Bppf>isoforms</Bppf>{/NP_P_94} .
-
-In {NP_95}contrast{/NP_95} , {NP_96}the inhibition{/NP_96} of {NP_P_97}<p>alphaPKC</p>{/NP_P_97} {VP_act_neg_98}does not affect{/VP_act_neg_98} {NP_99}the activation{/NP_99} of {NP_P_100}<p>IKKbeta</p>{/NP_P_100} by {NP_P_101}<p>TNF-alpha</p>{/NP_P_101} .
-
-{AV_102}Interestingly{/AV_102} , {NP_P_103}recombinant active <p>zetaPKC</p> and <p>alphaPKC</p>{/NP_P_103} {VP_pass_104}are able{/VP_pass_104} {VP_act_105}to stimulate{/VP_act_105} in {NP_106}vitro{/NP_106} {NP_107}the activity{/NP_107} of {NP_P_108}<p>IKKbeta</p>{/NP_P_108} but {AV_109}not{/AV_109} that of {NP_P_110}<p>IKKalpha</p>{/NP_P_110} .
-
-OUTPUT 3
-PTM = ({VP_act_116};phosphorylates)
+OUTPUT 5
+PTM = ({VP_pass_66};phosphorylated)
 Inducer = (-;-)
-Kinase = ({NP_P_115}<p>zetaPKC</p>{/NP_P_115};-)
-	Method=rule: (kinase) for phrase=[{NP_P_115}recombinant <p>zetaPKC</p>{/NP_P_115}11..17|<p>zetaPKC</p>]
-Substrate = ({NP_P_117}<p>IKKbeta</p>{/NP_P_117};-)
-	Method=rule:1.1.1.1 (substrate) for phrase=[{NP_P_117}<p>IKKbeta</p>{/NP_P_117}]
-Site = ({NP_PP_120}177{/NP_PP_120};{NP_PP_120}Ser{/NP_PP_120};UNK)
-({NP_PP_120}181{/NP_PP_120};{NP_PP_120}Ser{/NP_PP_120};UNK)
-	Method=unclaimed_site_or_shared_substrate (site) for phrase=[{NP_PP_120}<pp>Ser177</pp> and <pp>Ser181</pp>{/NP_PP_120}0..5|Ser177|Ser1779..14|Ser181|Ser181]
-	Candidates (Site):
-		Candidate="{NP_PP_120}<pp>Ser177</pp> and <pp>Ser181</pp>{/NP_PP_120}" 	(Features:is-aa)
+Kinase = (-;-)
+	Candidates (Kinase):
+		Candidate="{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
+		Candidate="serine|serine 6" in "{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
+		Candidate="{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
+		Candidate="serines 577 and 580" in "{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
+		Candidate="{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
+		Candidate="threonine 715" in "{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
+		Candidate="{NP_P_61}<p>Ku70</p>{/NP_P_61}" 	(Features:dist=0|is-substrate_elsewhere|subject_subnc)
+		Candidate="<p>Ku70</p>" in "{NP_P_61}<p>Ku70</p>{/NP_P_61}" 	(Features:dist=0|is-substrate_elsewhere|subject_subnc|subject_subnc_modifier)
+		Candidate="<pp>transcriptional activation domain</pp>" in "{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}" 	(Features:dist=0)
+Substrate = ({NP_P_65}<p>Ku80</p>{/NP_P_65};-)
+	Method=rule: (substrate) for phrase=[{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}46..49|<p>Ku80</p>]
+Site = (-;-;{NP_P_65}<pp>transcriptional activation domain</pp>{/NP_P_65})
+({NP_PP_67}577{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
+({NP_PP_67}580{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
+({NP_PP_68}715{/NP_PP_68};{NP_PP_68}Thr{/NP_PP_68};UNK)
+	Method=rule: (site) for phrase=[{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}0..15|serines 577 and 580|Ser577,580]
+	Method=rule: (site) for phrase=[{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}0..11|threonine 715|Thr715]
+	Method=rule: (siteother) for phrase=[{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}11..41|<pp>transcriptional activation domain</pp>]
 
-In {NP_111}addition{/NP_111} , {NP_112}evidence{/NP_112} {VP_pass_113}is presented{/VP_pass_113} {AV_114}here{/AV_114} that {NP_P_115}recombinant <p>zetaPKC</p>{/NP_P_115} {VP_act_116}directly phosphorylates{/VP_act_116} {NP_P_117}<p>IKKbeta</p>{/NP_P_117} in {NP_118}vitro{/NP_118} , {VP_act_119}involving{/VP_act_119} {NP_PP_120}<pp>Ser177</pp> and <pp>Ser181</pp>{/NP_PP_120} .
+{NP_59}We{/NP_59} {VP_act_60}find{/VP_act_60} that {NP_P_61}<p>Ku70</p>{/NP_P_61} {VP_pass_62}is phosphorylated{/VP_pass_62} at {NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63} , {VP_pass_64}located{/VP_pass_64} in {NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65} {VP_pass_66}is phosphorylated{/VP_pass_66} at {NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67} and at {NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68} .
 
-{AV_121}Collectively{/AV_121} , {NP_122}these results{/NP_122} {VP_act_123}demonstrate{/VP_act_123} {NP_124}a critical role{/NP_124} for {NP_P_125}the <p>PKC isoforms</p>{/NP_P_125} in {NP_126}the <p>NF-kappaB</p> pathway{/NP_126} at {NP_127}the level{/NP_127} of {NP_128}<p>IKKbeta</p> activation and <p>IkappaB</p> degradation{/NP_128} .
+OUTPUT 6
+PTM = ({NP_PP_71};phosphorylation)
+Inducer = (-;-)
+Kinase = (-;-)
+	Candidates (Kinase):
+		Candidate="<pp>serine-glutamine</pp>" in "{NP_75}the <pp>serine-glutamine</pp> consensus{/NP_75}" 	(Features:dist=0)
+		Candidate="<p>DNA-PK</p>" in "{NP_76}<p>DNA-PK</p> phosphorylation{/NP_76}" 	(Features:dist=0|is-kinase_elsewhere)
+		Candidate="<Bppp>phosphorylation sites</Bppp>" in "{NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}" 	(Features:dist=0)
+		Candidate="<Bppp>phosphorylation motifs</Bppp>" in "{NP_PP_81}additional <Bppp>phosphorylation motifs</Bppp>{/NP_PP_81}" 	(Features:dist=0)
+Substrate = ({NP_P_73}<p>Ku</p>{/NP_P_73};-)
+	Method=link (substrate) for phrase=[{NP_P_73}<p>Ku</p>{/NP_P_73}]
+		From: {NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}
+		Path: whole
+Site = (-;-;{NP_PP_71}<Bppp>phosphorylation sites</Bppp>{/NP_PP_71})
+({NP_PP_67}577{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
+({NP_PP_67}580{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
+	Method=link (site) for phrase=[{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}0..15|serines 577 and 580|Ser577,580]
+		From: {NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}
+		Path: refer,whole,part
+	Method=rule: (siteother) for phrase=[{NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}3..22|<Bppp>phosphorylation sites</Bppp>]
 
-NORM=ikk beta
-SYNONYM=IKKbeta
+OUTPUT 7
+PTM = ({NP_76};phosphorylation)
+	HasAgentTheme="<p>DNA-PK</p>" in "{NP_76}<p>DNA-PK</p> phosphorylation{/NP_76}"
+Inducer = (-;-)
+Kinase = ({NP_76}<p>DNA-PK</p>{/NP_76};-)
+	Method=agent_or_theme_but_known_as_kinase (kinase) for phrase=[{NP_76}<p>DNA-PK</p> phosphorylation{/NP_76}0..5|<p>DNA-PK</p>]
+Substrate = (-;-)
+Site = (-;-;UNK)
+
+OUTPUT 8
+PTM = ({NP_PP_81};phosphorylation)
+Inducer = (-;-)
+Kinase = (-;-)
+Substrate = (-;-)
+Site = (-;-;{NP_PP_81}<Bppp>phosphorylation motifs</Bppp>{/NP_PP_81})
+	Method=rule: (siteother) for phrase=[{NP_PP_81}additional <Bppp>phosphorylation motifs</Bppp>{/NP_PP_81}10..30|<Bppp>phosphorylation motifs</Bppp>]
+
+{AV_69}Interestingly{/AV_69} , {NP_70}none{/NP_70} of {NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71} {VP_pass_72}identified{/VP_pass_72} in {NP_P_73}<p>Ku</p>{/NP_P_73} {VP_act_74}correspond{/VP_act_74} to {NP_75}the <pp>serine-glutamine</pp> consensus{/NP_75} for {NP_76}<p>DNA-PK</p> phosphorylation{/NP_76} , {JP_77}consistent{/JP_77} with {NP_78}previous reports{/NP_78} that {NP_P_79}<p>DNA-PK</p>{/NP_P_79} {VP_act_80}can recognize{/VP_act_80} {NP_PP_81}additional <Bppp>phosphorylation motifs</Bppp>{/NP_PP_81} .
+
+NORM=ku
+SYNONYM=Ku
