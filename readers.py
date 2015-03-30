@@ -801,8 +801,8 @@ class RlimsVerboseReader(RlimsParser):
                     entity.property['std_site'] = {site}
                 else:
                     entity.property['std_site'].add(site)
-
-            res.append(entity)
+            if entity not in res:
+                res.append(entity)
 
         return res
 
