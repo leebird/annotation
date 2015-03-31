@@ -1,148 +1,73 @@
-{NP_1}PMID{/NP_1} - {CP_2}10026262{/CP_2}
+{NP_1}PMID{/NP_1} - {CP_2}10037142{/CP_2}
 
 OUTPUT 0
-PTM = ({NP_PP_4};phosphorylation)
+PTM = ({NP_6};phosphorylation)
 Inducer = (-;-)
-Kinase = ({NP_PP_4}<p>DNA -dependent protein kinase</p>{/NP_PP_4};-)
-	Method=rule:1.2.1.1.1|1.2.51.1.1.4:0.5 (kinase) for phrase=[{NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4}0..25|<p>DNA -dependent protein kinase</p>]
-Substrate = ({NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5};-)
-	Method=rule:1.2.1.1.0.1 (substrate) for phrase=[{NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5}]
-Site = (-;-;{NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4})
-(-;-;{NP_P_5} 70{/NP_P_5})
-	Method=rule:1.2.1.1.0.1 (site) for phrase=[{NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5}2..3| 70|]
-	Method=rule: (siteother) for phrase=[{NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4}]
+Kinase = (-;-)
+Substrate = ({NP_4}<p>Transcription factor AP-2</p>{/NP_4};-)
+	Method=rule:2.1401.1:0.5 (substrate) for phrase=[{NP_4}<p>Transcription factor AP-2</p> activity{/NP_4}0..22|<p>Transcription factor AP-2</p>]
+Site = (-;-;UNK)
 
-{NP_3}TI{/NP_3} - {NP_PP_4}<pp><p>DNA -dependent protein kinase</p> phosphorylation sites</pp>{/NP_PP_4} in {NP_P_5}<p>Ku 70/80 heterodimer</p>{/NP_P_5} .
+{NP_3}TI{/NP_3} - {NP_4}<p>Transcription factor AP-2</p> activity{/NP_4} {VP_pass_5}is modulated{/VP_pass_5} by {NP_6}<Bppf>protein kinase</Bppf> A-mediated phosphorylation{/NP_6} .
 
-{NP_6}AB{/NP_6} - {NP_B_7}<B><p>Ku</p> antigen</B>{/NP_B_7} {VP_pass_8}is composed{/VP_pass_8} of {CP_9}70{/CP_9} and {NP_P_10}<p>82 kDa subunits</p>{/NP_P_10} ( {NP_P_11}<p>Ku70</p> and <p>Ku80</p>{/NP_P_11} , {AV_12}respectively{/AV_12} ) {NP_13}that{/NP_13} {VP_act_14}together bind{/VP_act_14} with {NP_15}high affinity{/NP_15} to {NP_16}ends{/NP_16} of {NP_17}double-stranded DNA{/NP_17} and {NP_B_18}other <B>DNA structures</B>{/NP_B_18} in {NP_19}vitro{/NP_19} .
-
-When {VP_act_20}bound{/VP_act_20} to {NP_21}DNA{/NP_21} , {NP_P_22}the <Bppf><p>Ku 70/80</p> heterodimer</Bppf>{/NP_P_22} {VP_act_23}enhances{/VP_act_23} {NP_24}the <Bppf>kinase</Bppf> activity{/NP_24} of {NP_P_25}the catalytic <Bppf>subunit</Bppf>{/NP_P_25} of {NP_P_26}the <p>DNA -dependent protein kinase</p>{/NP_P_26} , {NP_P_27}<p>DNA-PKcs</p>{/NP_P_27} .
-
-{NP_P_28}<p>Ku</p> and <p>DNA-PKcs</p>{/NP_P_28} {VP_pass_29}are required{/VP_pass_29} for {NP_30}<B>V(D) J</B> recombination and DNA double{/NP_30} - {NP_31}<Bppp>strand</Bppp> break repair{/NP_31} in {NP_32}vivo{/NP_32} and {VP_act_33}may also play{/VP_act_33} {NP_34}a role{/NP_34} in {NP_35}regulation{/NP_35} of {NP_36}transcription{/NP_36} .
+{NP_7}AB{/NP_7} - {NP_8}We{/NP_8} {VP_act_9}recently reported{/VP_act_9} that {NP_10}<pp>APOE promoter</pp> activity{/NP_10} {VP_pass_11}is stimulated{/VP_pass_11} by {NP_P_12}<p>cAMP</p>{/NP_P_12} , {NP_13}this effect{/NP_13} {VP_pass_14}being mediated{/VP_pass_14} by {NP_B_15}<B>factor <p>AP-2</p> [Garcia</B> et al. ( 1996 ) <B>J. Neurosci. 16</B>{/NP_B_15} , {NP_B_16}<B>7550-7556]</B>{/NP_B_16} .
 
 OUTPUT 1
-PTM = ({VP_pass_38};phosphorylated)
-Inducer = (-;-)
-Kinase = ({NP_P_39}<p>DNA-PKcs</p>{/NP_P_39};-)
-	Method=rule:1.13.1.1 (kinase) for phrase=[{NP_P_39}<p>DNA-PKcs</p>{/NP_P_39}]
-Substrate = ({NP_P_37}<p>Ku</p>{/NP_P_37};-)
-	Method=rule:1.3.1.1.0.1 (substrate) for phrase=[{NP_P_37}<p>Ku</p>{/NP_P_37}]
+PTM = ({NP_20};phosphorylation)
+Inducer = ({NP_20}<p>cAMP</p>{/NP_20};-)
+	Method=rule: (inducer) for phrase=[{NP_20}<p>cAMP</p> -induced phosphorylation{/NP_20}0..3|<p>cAMP</p>]
+Kinase = (-;-)
+Substrate = (-;-)
 Site = (-;-;UNK)
+
+{AV_17}Here{/AV_17} , {NP_18}we{/NP_18} {VP_act_19}study{/VP_act_19} whether {NP_20}<p>cAMP</p> -induced phosphorylation{/NP_20} {VP_act_21}modulates{/VP_act_21} {NP_22}the activity{/NP_22} of {NP_P_23}<p>AP-2</p>{/NP_P_23} .
 
 OUTPUT 2
-PTM = ({NP_46};phosphorylation)
-	HasAgentTheme="<p>Ku</p>" in "{NP_46}<p>Ku</p> phosphorylation{/NP_46}"
+PTM = ({VP_pass_25};phosphorylated)
 Inducer = (-;-)
-Kinase = ({NP_P_44}<p>DNA-PKcs</p>{/NP_P_44};-)
-	Method=from_other_triggers_in_the_same_sentence (kinase) for phrase=[{NP_P_39}<p>DNA-PKcs</p>{/NP_P_39}]
-	Method=closer (kinase) for phrase=[{NP_P_44}<p>DNA-PKcs</p>{/NP_P_44}]
-		From: {NP_P_39}<p>DNA-PKcs</p>{/NP_P_39}
-Substrate = ({NP_46}<p>Ku</p>{/NP_46};-)
-	Method=agent_or_theme_but_known_as_substrate (substrate) for phrase=[{NP_46}<p>Ku</p> phosphorylation{/NP_46}0..1|<p>Ku</p>]
-Site = (-;-;UNK)
+Kinase = ({NP_P_27}<p>protein kinase A ( PKA )</p>{/NP_P_27};-)
+	Method=rule:1.13.1.1 (kinase) for phrase=[{NP_P_27}<p>protein kinase A ( PKA )</p>{/NP_P_27}]
+Substrate = ({NP_P_24}<p>AP-2</p>{/NP_P_24};-)
+	Method=rule: (substrate) for phrase=[{NP_P_24}Recombinant <p>AP-2</p>{/NP_P_24}11..14|<p>AP-2</p>]
+Site = ({NP_PP_28}239{/NP_PP_28};{NP_PP_28}Ser{/NP_PP_28};UNK)
+	Method=rule: (site) for phrase=[{NP_PP_28}<pp>Ser239</pp>{/NP_PP_28}0..5|Ser239|Ser239]
 
-{NP_P_37}<p>Ku</p>{/NP_P_37} {VP_pass_38}is phosphorylated{/VP_pass_38} by {NP_P_39}<p>DNA-PKcs</p>{/NP_P_39} in {NP_40}vitro{/NP_40} , and {NP_41}<Bpcl>cells</Bpcl>{/NP_41} {NP_42}that{/NP_42} {VP_act_43}lack{/VP_act_43} {NP_P_44}<p>DNA-PKcs</p>{/NP_P_44} {VP_pass_45}are deficient{/VP_pass_45} in {NP_46}<p>Ku</p> phosphorylation{/NP_46} in {NP_47}vitro{/NP_47} , {VP_act_48}suggesting{/VP_act_48} that {NP_P_49}<p>Ku</p>{/NP_P_49} {VP_act_50}may be{/VP_act_50} {NP_51}a physiological target{/NP_51} for {NP_P_52}<p>DNA-PK</p>{/NP_P_52} .
+{NP_P_24}Recombinant <p>AP-2</p>{/NP_P_24} {VP_pass_25}was phosphorylated{/VP_pass_25} in {NP_26}vitro{/NP_26} by {NP_P_27}<p>protein kinase A ( PKA )</p>{/NP_P_27} at {NP_PP_28}<pp>Ser239</pp>{/NP_PP_28} .
 
 OUTPUT 3
-PTM = ({NP_57};phosphorylation)
-	HasAgentTheme="<p>DNA-PK</p>" in "{NP_57}<p>DNA-PK</p> phosphorylation{/NP_57}"
+PTM = ({NP_33};phosphorylation)
 Inducer = (-;-)
-Kinase = ({NP_57}<p>DNA-PK</p>{/NP_57};-)
-	Method=rule:1.2.1.1.1 (kinase) for phrase=[{NP_57}<p>DNA-PK</p> phosphorylation{/NP_57}0..5|<p>DNA-PK</p>]
-Substrate = ({NP_P_58}<s>human</s> <p>Ku protein</p>{/NP_P_58};-)
-	Method=rule:1.2.1.1.0.1 (substrate) for phrase=[{NP_P_58}<s>human</s> <p>Ku protein</p>{/NP_P_58}]
-Site = (-;-;{NP_PP_56}<Bppp>sites</Bppp>{/NP_PP_56})
-	Method=rule: (siteother) for phrase=[{NP_PP_56}the <Bppp>sites</Bppp>{/NP_PP_56}3..7|<Bppp>sites</Bppp>]
+Kinase = ({NP_P_35}<p>PKA</p>{/NP_P_35};-)
+	Method=rule:1.12.1.1.0.2 (kinase) for phrase=[{NP_P_35}<p>PKA</p>{/NP_P_35}]
+Substrate = ({NP_P_34}<p>AP-2</p>{/NP_P_34};-)
+	Method=rule:1.2.1.1.0.1 (substrate) for phrase=[{NP_P_34}<p>AP-2</p>{/NP_P_34}]
+Site = ({NP_PP_30}239{/NP_PP_30};{NP_PP_30}Ser{/NP_PP_30};UNK)
+	Method=unclaimed_site_or_shared_substrate (site) for phrase=[{NP_PP_30}<pp>Ser239</pp>{/NP_PP_30}0..5|Ser239|Ser239]
+	Candidates (Site):
+		Candidate="{NP_PP_30}<pp>Ser239</pp>{/NP_PP_30}" 	(Features:is-aa)
 
-{AV_53}Here{/AV_53} {NP_54}we{/NP_54} {VP_act_55}have identified{/VP_act_55} {NP_PP_56}the <Bppp>sites</Bppp>{/NP_PP_56} of {NP_57}<p>DNA-PK</p> phosphorylation{/NP_57} in {NP_P_58}<s>human</s> <p>Ku protein</p>{/NP_P_58} .
+{NP_29}Mutation{/NP_29} of {NP_PP_30}<pp>Ser239</pp>{/NP_PP_30} to {NP_PP_31}<pp>Ala</pp>{/NP_PP_31} {VP_act_32}abolished{/VP_act_32} in {NP_33}vitro phosphorylation{/NP_33} of {NP_P_34}<p>AP-2</p>{/NP_P_34} by {NP_P_35}<p>PKA</p>{/NP_P_35} , but {AV_36}not{/AV_36} {NP_37}the DNA binding activity{/NP_37} of {NP_P_38}<p>AP-2</p>{/NP_P_38} .
+
+{NP_39}Cotransfection studies{/NP_39} {VP_act_40}showed{/VP_act_40} that {NP_P_41}<p>PKA</p>{/NP_P_41} {VP_act_42}stimulated{/VP_act_42} {NP_43}the effect{/NP_43} of {NP_P_44}<p>AP-2</p>{/NP_P_44} on {NP_PP_45}the <pp>APOE promoter</pp>{/NP_PP_45} , but {AV_46}not{/AV_46} that of {NP_P_47}the <Bppf><pp>S239A</pp> mutant</Bppf>{/NP_P_47} .
 
 OUTPUT 4
-PTM = ({VP_pass_62};phosphorylated)
+PTM = ({NP_52};phosphorylation)
 Inducer = (-;-)
+	Method=rule: (inducer) for phrase=[{NP_52}<p>PKA</p> -induced phosphorylation{/NP_52}0..2|<p>PKA</p>{NP_P_49}<p>cAMP</p>{/NP_P_49}]
 Kinase = (-;-)
-	Candidates (Kinase):
-		Candidate="{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
-		Candidate="serine|serine 6" in "{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
-		Candidate="{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
-		Candidate="serines 577 and 580" in "{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
-		Candidate="{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
-		Candidate="threonine 715" in "{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
-		Candidate="<pp>transcriptional activation domain</pp>" in "{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}" 	(Features:dist=0)
-		Candidate="<p>Ku80</p>" in "{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}" 	(Features:dist=0|is-substrate_elsewhere)
-Substrate = ({NP_P_61}<p>Ku70</p>{/NP_P_61};-)
-	Method=link (substrate) for phrase=[{NP_P_61}<p>Ku70</p>{/NP_P_61}]
-		From: {NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}
-		Path: whole
-	Method=rule:1.3.1.1.0.1 (substrate) for phrase=[{NP_P_61}<p>Ku70</p>{/NP_P_61}]
-Site = (-;{NP_PP_63}Ser{/NP_PP_63};UNK)
-({NP_PP_63}6{/NP_PP_63};{NP_PP_63}Ser{/NP_PP_63};UNK)
-	Method=rule: (site) for phrase=[{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}7..12|serine|Ser21..27|serine 6|Ser6]
-
-OUTPUT 5
-PTM = ({VP_pass_66};phosphorylated)
-Inducer = (-;-)
-Kinase = (-;-)
-	Candidates (Kinase):
-		Candidate="{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
-		Candidate="serine|serine 6" in "{NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63}" 	(Features:dist=0)
-		Candidate="{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
-		Candidate="serines 577 and 580" in "{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}" 	(Features:dist=0)
-		Candidate="{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
-		Candidate="threonine 715" in "{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}" 	(Features:dist=0)
-		Candidate="{NP_P_61}<p>Ku70</p>{/NP_P_61}" 	(Features:dist=0|is-substrate_elsewhere|subject_subnc)
-		Candidate="<p>Ku70</p>" in "{NP_P_61}<p>Ku70</p>{/NP_P_61}" 	(Features:dist=0|is-substrate_elsewhere|subject_subnc|subject_subnc_modifier)
-		Candidate="<pp>transcriptional activation domain</pp>" in "{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}" 	(Features:dist=0)
-Substrate = ({NP_P_65}<p>Ku80</p>{/NP_P_65};-)
-	Method=rule: (substrate) for phrase=[{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}46..49|<p>Ku80</p>]
-Site = (-;-;{NP_P_65}<pp>transcriptional activation domain</pp>{/NP_P_65})
-({NP_PP_67}577{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
-({NP_PP_67}580{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
-({NP_PP_68}715{/NP_PP_68};{NP_PP_68}Thr{/NP_PP_68};UNK)
-	Method=rule: (site) for phrase=[{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}0..15|serines 577 and 580|Ser577,580]
-	Method=rule: (site) for phrase=[{NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68}0..11|threonine 715|Thr715]
-	Method=rule: (siteother) for phrase=[{NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65}11..41|<pp>transcriptional activation domain</pp>]
-
-{NP_59}We{/NP_59} {VP_act_60}find{/VP_act_60} that {NP_P_61}<p>Ku70</p>{/NP_P_61} {VP_pass_62}is phosphorylated{/VP_pass_62} at {NP_PP_63}a single <pp>serine residue</pp> , <pp>serine 6</pp>{/NP_PP_63} , {VP_pass_64}located{/VP_pass_64} in {NP_P_65}the putative <pp>transcriptional activation domain</pp> , and <p>Ku80</p>{/NP_P_65} {VP_pass_66}is phosphorylated{/VP_pass_66} at {NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67} and at {NP_PP_68}<pp>threonine 715</pp>{/NP_PP_68} .
-
-OUTPUT 6
-PTM = ({NP_PP_71};phosphorylation)
-Inducer = (-;-)
-Kinase = (-;-)
-	Candidates (Kinase):
-		Candidate="<pp>serine-glutamine</pp>" in "{NP_75}the <pp>serine-glutamine</pp> consensus{/NP_75}" 	(Features:dist=0)
-		Candidate="<p>DNA-PK</p>" in "{NP_76}<p>DNA-PK</p> phosphorylation{/NP_76}" 	(Features:dist=0|is-kinase_elsewhere)
-		Candidate="<Bppp>phosphorylation sites</Bppp>" in "{NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}" 	(Features:dist=0)
-		Candidate="<Bppp>phosphorylation motifs</Bppp>" in "{NP_PP_81}additional <Bppp>phosphorylation motifs</Bppp>{/NP_PP_81}" 	(Features:dist=0)
-Substrate = ({NP_P_73}<p>Ku</p>{/NP_P_73};-)
-	Method=link (substrate) for phrase=[{NP_P_73}<p>Ku</p>{/NP_P_73}]
-		From: {NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}
-		Path: whole
-Site = (-;-;{NP_PP_71}<Bppp>phosphorylation sites</Bppp>{/NP_PP_71})
-({NP_PP_67}577{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
-({NP_PP_67}580{/NP_PP_67};{NP_PP_67}Ser{/NP_PP_67};UNK)
-	Method=link (site) for phrase=[{NP_PP_67}<pp>serines 577 and 580</pp>{/NP_PP_67}0..15|serines 577 and 580|Ser577,580]
-		From: {NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}
-		Path: refer,whole,part
-	Method=rule: (siteother) for phrase=[{NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71}3..22|<Bppp>phosphorylation sites</Bppp>]
-
-OUTPUT 7
-PTM = ({NP_76};phosphorylation)
-	HasAgentTheme="<p>DNA-PK</p>" in "{NP_76}<p>DNA-PK</p> phosphorylation{/NP_76}"
-Inducer = (-;-)
-Kinase = ({NP_76}<p>DNA-PK</p>{/NP_76};-)
-	Method=agent_or_theme_but_known_as_kinase (kinase) for phrase=[{NP_76}<p>DNA-PK</p> phosphorylation{/NP_76}0..5|<p>DNA-PK</p>]
-Substrate = (-;-)
+	Method=inducer_is_kinase (kinase) for phrase=[{NP_52}<p>PKA</p> -induced phosphorylation{/NP_52}0..2|<p>PKA</p>{NP_P_49}<p>cAMP</p>{/NP_P_49}]
+Substrate = ({NP_52}<p>PKA</p>{/NP_52};-)
+	Method=link (substrate) for phrase=[{NP_52}<p>PKA</p> -induced phosphorylation{/NP_52}0..2|<p>PKA</p>]
+		From: {NP_P_53}this <Bppf>factor</Bppf>{/NP_P_53}
+		Path: refer
 Site = (-;-;UNK)
 
-OUTPUT 8
-PTM = ({NP_PP_81};phosphorylation)
-Inducer = (-;-)
-Kinase = (-;-)
-Substrate = (-;-)
-Site = (-;-;{NP_PP_81}<Bppp>phosphorylation motifs</Bppp>{/NP_PP_81})
-	Method=rule: (siteother) for phrase=[{NP_PP_81}additional <Bppp>phosphorylation motifs</Bppp>{/NP_PP_81}10..30|<Bppp>phosphorylation motifs</Bppp>]
+{AV_48}Therefore{/AV_48} , {NP_P_49}<p>cAMP</p>{/NP_P_49} {VP_act_50}may modulate{/VP_act_50} {NP_51}<p>AP-2</p> activity{/NP_51} by {NP_52}<p>PKA</p> -induced phosphorylation{/NP_52} of {NP_P_53}this <Bppf>factor</Bppf>{/NP_P_53} .
 
-{AV_69}Interestingly{/AV_69} , {NP_70}none{/NP_70} of {NP_PP_71}the <Bppp>phosphorylation sites</Bppp>{/NP_PP_71} {VP_pass_72}identified{/VP_pass_72} in {NP_P_73}<p>Ku</p>{/NP_P_73} {VP_act_74}correspond{/VP_act_74} to {NP_75}the <pp>serine-glutamine</pp> consensus{/NP_75} for {NP_76}<p>DNA-PK</p> phosphorylation{/NP_76} , {JP_77}consistent{/JP_77} with {NP_78}previous reports{/NP_78} that {NP_P_79}<p>DNA-PK</p>{/NP_P_79} {VP_act_80}can recognize{/VP_act_80} {NP_PP_81}additional <Bppp>phosphorylation motifs</Bppp>{/NP_PP_81} .
+NORM=ap 2
+SYNONYM=AP-2
+SYNONYM=Transcription factor AP-2
 
-NORM=ku
-SYNONYM=Ku
+NORM=pka
+SYNONYM=PKA
+SYNONYM=protein kinase A ( PKA )
