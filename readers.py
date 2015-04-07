@@ -116,12 +116,14 @@ class AnnParser(Parser):
         :rtype: None
         """
         tokens = line.split('\t')
-        relation, arg1, arg2 = tokens[1].split(' ')
+        fields = tokens[1].split(' ')
+        relation = fields[0]
+        args = tuple(fields[1:])
         values = annotation.property.get(relation)
         if values is not None:
-            values.append((arg1, arg2))
+            values.append(args)
         else:
-            annotation.property.add(relation, [(arg1, arg2)])
+            annotation.property[relation] = [args]
 
     def parse_modification(self, line, annotation):
         tokens = line.split('\t')

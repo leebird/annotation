@@ -464,47 +464,51 @@ class Annotation(object):
     def loads(cls, data, format='json'):
         """load annotation from json object
         """
+        packed = None
         annotation = Annotation()
         if format == 'json':
             packed = json.loads(data)
-            annotation.text = packed.get('text')
-            annotation.property = packed.get('property')
-            annotation.doc_id = packed.get('doc_id')
-            entities = packed.get('entity_set')
-            relations = packed.get('relation_set')
+        elif format == 'dict':
+            packed = data
+            
+        annotation.text = packed.get('text')
+        annotation.property = packed.get('property')
+        annotation.doc_id = packed.get('doc_id')
+        entities = packed.get('entity_set')
+        relations = packed.get('relation_set')
 
-            for entity in entities:
-                property = entity.get('property')
-                sanity_check = property.get('sanity_check')
-                category = entity.get('category')
-                start = entity.get('start')
-                end = entity.get('end')
-                text = entity.get('text')
-                id_ = entity.get('id')
-                
-                if sanity_check:
-                    ent = annotation.add_entity(category, start, end, text, id_)
-                else:
-                    ent = annotation.add_entity(category, start, end, text, id_, False)
-                ent.property = property
+        for entity in entities:
+            property = entity.get('property')
+            sanity_check = property.get('sanity_check')
+            category = entity.get('category')
+            start = entity.get('start')
+            end = entity.get('end')
+            text = entity.get('text')
+            id_ = entity.get('id')
+            
+            if sanity_check:
+                ent = annotation.add_entity(category, start, end, text, id_)
+            else:
+                ent = annotation.add_entity(category, start, end, text, id_, False)
+            ent.property = property
 
-            for relation in relations:
-                category = relation.get('category')
-                property = relation.get('property')
+        for relation in relations:
+            category = relation.get('category')
+            property = relation.get('property')
 
-                id_ = relation.get('id')
-                rel = annotation.add_relation(category, id_=id_)
-                rel.property = property
+            id_ = relation.get('id')
+            rel = annotation.add_relation(category, id_=id_)
+            rel.property = property
 
-            for relation in relations:
-                arguments = relation.get('argument_set')
-                id_ = relation.get('id')
-                rel = annotation.id_map.get(id_)
+        for relation in relations:
+            arguments = relation.get('argument_set')
+            id_ = relation.get('id')
+            rel = annotation.id_map.get(id_)
 
-                for arg in arguments:
-                    arg_category = arg[0]
-                    arg_id = arg[1]
-                    actual_arg = annotation.id_map.get(arg_id)
-                    rel.add_argument(arg_category, actual_arg)
+            for arg in arguments:
+                arg_category = arg[0]
+                arg_id = arg[1]
+                actual_arg = annotation.id_map.get(arg_id)
+                rel.add_argument(arg_category, actual_arg)
 
         return annotation

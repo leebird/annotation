@@ -11,7 +11,7 @@ class BionlpWriter(object):
     event_format = u'{0}\t{1}:{2} {3}\n'
     relation_format = u'{0}\t{1} {2}\n'
     modification_format = u'{0}\t{1}\n'
-    equiv_format = u'*\tEquiv {0} {1}\n'
+    equiv_format = u'*\tEquiv {0}\n'
     
     def __init__(self):
         pass
@@ -158,10 +158,11 @@ class AnnWriter(BionlpWriter):
             f.write(line)
         
         # write equive lines
-        for rel, pairs in annotation.property.items():
+        for rel, element_groups in annotation.property.items():
             if rel == 'Equiv':
-                line = self.equiv_format.format(pairs[0], pairs[1])
-                f.write(line)
+                for eg in element_groups:
+                    line = self.equiv_format.format(' '.join(eg))
+                    f.write(line)
 
         for i,mod_event in enumerate(modifications):
             mod_id = 'M'+str(i+1)
