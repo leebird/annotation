@@ -37,7 +37,7 @@ class BionlpWriter(object):
         :return: a line containing entity information
         :rtype: str
         """
-        entity_id = entity.property.get('id')
+        entity_id = entity.id_
         if entity_id is None:
             return ''
 
@@ -55,16 +55,16 @@ class BionlpWriter(object):
         :return: a line containing event information
         :rtype: str
         """
-        args = [a.role + ':' + a.value.property.get('id') for a in event.arguments]
+        args = [a.role + ':' + a.value.id_ for a in event.arguments]
         args = ' '.join(args).strip()
-        event_id = event.property.get('id')
+        event_id = event.id_
 
         if len(args) == 0 or event_id is None:
             return ''
         
-        return self.event_format.format(event.property.get('id'),
+        return self.event_format.format(event.id_,
                                         event.category,
-                                        self.get_trigger(event).property.get('id'),
+                                        self.get_trigger(event).id_,
                                         args)
 
     def relation_line(self, relation):
@@ -75,14 +75,14 @@ class BionlpWriter(object):
         :return: a line containing relation information
         :rtype: str
         """
-        args = [a.role + ':' + a.value.property.get('id') for a in relation.arguments]
+        args = [a.role + ':' + a.value.id_ for a in relation.arguments]
         args = ' '.join(args).strip()
 
-        relation_id = relation.property.get('id')
+        relation_id = relation.id_
         if relation_id is None:
             return ''
 
-        return self.relation_format.format(relation.property.get('id'),
+        return self.relation_format.format(relation.id_,
                                            relation.category,
                                            args)
 
@@ -109,7 +109,7 @@ class BionlpWriter(object):
             existed_indices = []
             unindexed_candidates = []
             for candidate in candidates:
-                candidate_id = candidate.property.get('id')
+                candidate_id = candidate.id_
                 if candidate_id is None:
                     unindexed_candidates.append(candidate)
                 else:
@@ -127,7 +127,7 @@ class BionlpWriter(object):
                 next_index = 1
 
             for candidate in unindexed_candidates:
-                candidate.property['id'] = prefix + str(next_index)
+                candidate.id_ = prefix + str(next_index)
                 next_index += 1
 
         reindex(annotation.entities, 'T')
