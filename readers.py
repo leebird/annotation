@@ -945,6 +945,7 @@ class MedlineParser(Parser):
                'DP  -': 'date',
                'AU  -': 'author',
                'TA  -': 'journal',
+               'AD  -': 'affiliation',
                '     ': 'previous'}
 
     def __init__(self):
@@ -972,16 +973,19 @@ class MedlineParser(Parser):
 
             if head in cls.mapHead:
                 if cls.mapHead[head] == 'previous' and needle is not None:
-                    if needle == 'abstract' or needle == 'title':
-                        linetext = ' ' + linetext
-                    abstracts[currpmid][needle] += linetext
+                    # if needle == 'abstract' or needle == 'title':
+                    linetext = ' ' + linetext
+                    abstracts[currpmid][needle][-1] += linetext
                 else:
                     needle = cls.mapHead[head]
                     if needle == 'pmid':
                         currpmid = linetext
                         abstracts[currpmid] = {}
                     else:
-                        abstracts[currpmid][needle] = linetext
+                        try:
+                            abstracts[currpmid][needle].append(linetext)
+                        except KeyError:
+                            abstracts[currpmid][needle] = [linetext]
             else:
                 needle = None
 
